@@ -258,6 +258,7 @@ body.webgl .tile.drop{animation:none}
   <div class="sub">換家人照片：只存在這台裝置上，不會上傳到網路</div>
   <div class="slots" id="slots"></div>
   <div class="opts">
+    <label>背景音樂 <select id="opt-bgm"><option value="on">開</option><option value="off">關</option></select></label>
     <div class="opt">消除音效 <span><select id="opt-sfx"><option value="glass">玻璃碎裂</option><option value="crystal">水晶叮</option><option value="bubble">泡泡啵</option><option value="boom">爆炸砰</option><option value="bell">鈴鐺</option><option value="laser">雷射</option><option value="magic">魔法</option><option value="coin">金幣</option><option value="drum">鼓聲</option><option value="drop">水滴</option><option value="none">不要音效</option></select> <button class="ghost" style="margin:0;padding:4px 10px;font-size:14px" onclick="previewSfx()">試聽</button></span></div>
     <label>寶石材質 <select id="opt-mat"><option value="candy">亮面糖果</option><option value="cut">切割寶石</option><option value="jelly">果凍</option><option value="matte">霧面陶瓷</option><option value="metal">金屬</option><option value="crystal">能量水晶</option><option value="energymetal">能量金屬</option></select></label>
     <label>寶石配色 <select id="opt-pal"><option value="candy">糖果</option><option value="rainbow">彩虹純色</option><option value="morandi">莫蘭迪</option><option value="gemstone">寶石名</option><option value="macaron">馬卡龍</option><option value="princess">公主粉紅</option></select></label>
@@ -277,7 +278,7 @@ body.webgl .tile.drop{animation:none}
 </div>
 
 <script>
-const VERSION='v2.21 (3D)';document.getElementById('ver').textContent=VERSION;
+const VERSION='v2.22 (3D)';document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
 const store={
@@ -364,7 +365,27 @@ const sfx={
     o.frequency.setValueAtTime(f1,actx.currentTime);o.frequency.exponentialRampToValueAtTime(f2,actx.currentTime+d);g.gain.value=vol;g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+d);
     o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d)}catch(e){}}
 };
-function toggleMute(){muted=!muted;store.set('muted',muted?'1':'0');document.getElementById('mute').textContent=muted?'🔇 靜音':'🔊 聲音'}
+function toggleMute(){muted=!muted;store.set('muted',muted?'1':'0');document.getElementById('mute').textContent=muted?'🔇 靜音':'🔊 聲音';BGM.update()}
+
+/* ====== 背景音樂（程式生成，柔和五聲音階） ====== */
+const BGM=(()=>{
+  let on=false,master,timer,step=0,next=0;
+  const CH=[[261.63,329.63,392.0],[220.0,261.63,329.63],[174.61,220.0,261.63],[196.0,246.94,293.66]]; // C Am F G
+  const PENTA=[523.25,587.33,659.25,783.99,880.0,1046.5,1174.7];
+  function ctx(){actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();return actx}
+  function want(){return (store.get('bgm')||'on')==='on'&&!muted}
+  function pad(freqs,t,dur){const g=ctx().createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.06,t+1.2);g.gain.setValueAtTime(.06,t+dur-1.2);g.gain.linearRampToValueAtTime(0,t+dur);g.connect(master);
+    freqs.forEach(f=>[0,-6,6].forEach(dt=>{const o=ctx().createOscillator();o.type='triangle';o.frequency.value=f;o.detune.value=dt;o.connect(g);o.start(t);o.stop(t+dur)}))}
+  function pluck(f,t){const g=ctx().createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.09,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+1.4);g.connect(master);
+    const o=ctx().createOscillator();o.type='sine';o.frequency.value=f;o.connect(g);o.start(t);o.stop(t+1.5)}
+  function schedule(){const c=ctx();while(next<c.currentTime+2.5){const bar=Math.floor(step/8)%4;if(step%8===0)pad(CH[bar],next,4.2);
+    if(Math.random()<.7)pluck(PENTA[Math.floor(Math.random()*PENTA.length)],next);
+    next+=.5;step++}}
+  function start(){if(on||!want())return;try{const c=ctx();master=c.createGain();master.gain.value=0;master.connect(c.destination);master.gain.linearRampToValueAtTime(.9,c.currentTime+2);next=c.currentTime+.1;step=0;timer=setInterval(schedule,1000);schedule();on=true}catch(e){}}
+  function stop(){if(!on)return;clearInterval(timer);try{master.gain.linearRampToValueAtTime(0,ctx().currentTime+1);const m=master;setTimeout(()=>m.disconnect(),1200)}catch(e){}on=false}
+  function update(){want()?start():stop()}
+  return {start,stop,update};
+})();
 
 /* ====== 畫面切換 ====== */
 const $=id=>document.getElementById(id);
@@ -409,11 +430,11 @@ function resumeGame(){if(!G||G.over||G.timer)return;G.timer=setInterval(tick,100
 function togglePause(){if(!G||G.over)return;if(G.timer){pauseGame();$('ov-stars').textContent='⏸';$('ov-title').textContent='暫停中';$('ov-text').textContent='怪獸也在休息';$('ov-family').innerHTML='';const b=$('ov-btn');b.textContent='▶ 繼續';b.onclick=()=>{$('overlay').classList.remove('on');resumeGame()};$('overlay').classList.add('on')}}
 function confirmHome(){if(!G||G.over){goTitle();return}pauseGame();$('ov-stars').textContent='';$('ov-title').textContent='要回首頁嗎？';$('ov-text').textContent='這一關的進度會不見';$('ov-family').innerHTML='';const b=$('ov-btn');b.textContent='繼續玩';b.onclick=()=>{$('overlay').classList.remove('on');resumeGame()};$('overlay').classList.add('on')}
 /* 切到背景自動暫停 */
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&G&&!G.over&&G.timer)togglePause()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){BGM.stop();if(G&&!G.over&&G.timer)togglePause()}else BGM.update()});
 /* 螢幕常亮 */
 let wake=null;async function requestWake(){try{wake=await navigator.wakeLock.request('screen')}catch(e){}}function releaseWake(){try{wake&&wake.release();wake=null}catch(e){}}
 /* 第一次觸控解鎖音訊 */
-document.addEventListener('pointerdown',()=>{try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume()}catch(e){}},{passive:true});
+document.addEventListener('pointerdown',()=>{try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume()}catch(e){}BGM.update()},{passive:true});
 
 /* ====== 3D 寶石（Three.js） ====== */
 const GL=(()=>{
@@ -779,7 +800,7 @@ let picking=null,prevScreen='s-title',paused=false;
 function showSettings(){
   prevScreen=document.querySelector('.screen.on').id;
   if(G&&!G.over&&G.timer){pauseGame();paused=true}
-  $('opt-angel').value=store.get('angel')||'sometimes';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'metal';$('opt-pal').value=store.get('pal')||'rainbow';$('opt-speed').value=store.get('speed')||'1.3';$('opt-sfx').value=store.get('clearSfx')||'magic';
+  $('opt-angel').value=store.get('angel')||'sometimes';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'metal';$('opt-pal').value=store.get('pal')||'rainbow';$('opt-speed').value=store.get('speed')||'1.3';$('opt-sfx').value=store.get('clearSfx')||'magic';$('opt-bgm').value=store.get('bgm')||'on';
   const box=$('slots');box.innerHTML='';
   ROLES.forEach(r=>{
     const d=document.createElement('div');d.className='slot';
@@ -796,6 +817,7 @@ function closeSettings(){
 }
 $('opt-angel').onchange=e=>store.set('angel',e.target.value);
 $('opt-sfx').onchange=e=>store.set('clearSfx',e.target.value);
+$('opt-bgm').onchange=e=>{store.set('bgm',e.target.value);BGM.update()};
 $('opt-vib').onchange=e=>store.set('vib',e.target.value);
 $('opt-shake').onchange=e=>store.set('shake',e.target.value);
 $('opt-shake2').onchange=e=>store.set('shake2',e.target.value);
