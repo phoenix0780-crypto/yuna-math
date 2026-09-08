@@ -37,6 +37,8 @@ button{font-family:inherit;border:0;cursor:pointer}
 .screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto;overflow:hidden}
 .screen.on{display:flex}
 #s-title,#s-settings{overflow-y:auto;justify-content:flex-start}
+#s-game{justify-content:flex-start}
+.gridwrap{flex:0 0 auto}
 #s-settings{padding-bottom:calc(30px + env(safe-area-inset-bottom))}
 h1{font-size:44px;margin:24px 0 4px;color:var(--gold);text-shadow:0 4px 0 #a86f00;letter-spacing:2px}
 .sub{font-size:18px;opacity:.85;margin-bottom:24px}
@@ -90,8 +92,8 @@ body.webgl .tile.sel{transform:none;filter:none}
 body.webgl .tile:active{transform:none}
 body.webgl .tile.pop{animation:none;opacity:0}
 body.webgl .tile.drop{animation:none}
-.grid{display:grid;gap:4px;width:100%;max-width:600px;margin:6px auto 0;touch-action:none;position:relative;z-index:1}
-.tile{aspect-ratio:1;position:relative;font-size:clamp(18px,var(--fs,30px),40px);clip-path:var(--shape);font-size:30px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;transition:transform .12s,opacity .3s;text-shadow:0 0 6px rgba(0,0,0,.6),0 2px 0 rgba(0,0,0,.4);background:
+.grid{display:grid;gap:4px;width:100%;max-width:600px;margin:6px auto 0;touch-action:none;position:relative;z-index:1;grid-auto-rows:1fr}
+.tile{position:relative;min-width:0;min-height:0;font-size:clamp(18px,var(--fs,30px),40px);clip-path:var(--shape);font-size:30px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;transition:transform .12s,opacity .3s;text-shadow:0 0 6px rgba(0,0,0,.6),0 2px 0 rgba(0,0,0,.4);background:
   radial-gradient(ellipse at 32% 24%,rgba(255,255,255,.95),rgba(255,255,255,.4) 18%,rgba(255,255,255,0) 40%),
   conic-gradient(from 200deg at 50% 50%,rgba(255,255,255,.45) 0 12%,rgba(0,0,0,0) 12% 30%,rgba(0,0,0,.3) 30% 48%,rgba(255,255,255,.18) 48% 60%,rgba(0,0,0,.4) 60% 78%,rgba(255,255,255,.3) 78% 90%,rgba(0,0,0,.2) 90% 100%),
   radial-gradient(circle at 50% 110%,rgba(0,0,0,.55),rgba(0,0,0,0) 60%),
@@ -189,7 +191,7 @@ body.webgl .tile.drop{animation:none}
   <div class="sub">點或滑動兩顆相鄰寶石，加起來等於 10 就碎掉！</div>
   <div class="levels" id="levels"></div>
   <button class="big" id="btn-continue" onclick="continueLast()" style="display:none">▶ 繼續上次</button>
-  <div class="ver">v2.11 (3D)</div>
+  <div class="ver">v2.12 (3D)</div>
   
 </div>
 
@@ -686,15 +688,18 @@ function lose(){
   $('overlay').classList.add('on');
 }
 function fitGrid(){
-  if(!G)return;const g=$('grid'),{cols,rows}=G.lv,gap=4;
-  const tr=$('s-game').querySelector('.track');
+  if(!G)return;const sc=$('s-game'),g=$('grid'),{cols,rows}=G.lv,gap=4;
+  const tr=sc.querySelector('.track'),hud=sc.querySelector('.hud'),tb=sc.querySelector('.toolbar');
   const vh=window.visualViewport?window.visualViewport.height:window.innerHeight;
-  const as=Math.max(44,Math.min(tr.clientWidth/8,vh*.085,96));tr.style.setProperty('--as',as+'px');
-  const top=g.getBoundingClientRect().top,avail=(window.visualViewport?window.visualViewport.height:window.innerHeight)-top-$('s-game').querySelector('.toolbar').offsetHeight-22;
-  const maxW=Math.min($('s-game').clientWidth-24,600);
+  const vw=sc.clientWidth;
+  // 賽道高度先依視窗估算（不依賴目前版面）
+  const as=Math.max(40,Math.min(vw/8,vh*.08,92));tr.style.setProperty('--as',as+'px');
+  const trackH=as*1.75+2, pad=parseFloat(getComputedStyle(sc).paddingTop)+parseFloat(getComputedStyle(sc).paddingBottom);
+  const avail=vh-pad-hud.offsetHeight-trackH-tb.offsetHeight-16;
+  const maxW=Math.min(vw-24,600);
   const tileByH=(avail-gap*(rows-1))/rows,tileByW=(maxW-gap*(cols-1))/cols;
-  const t=Math.max(28,Math.min(tileByH,tileByW));
-  g.style.width=(t*cols+gap*(cols-1))+'px';g.style.setProperty('--fs',Math.round(t*.5)+'px');
+  const t=Math.max(24,Math.min(tileByH,tileByW));
+  g.style.width=(t*cols+gap*(cols-1))+'px';g.style.height=(t*rows+gap*(rows-1))+'px';g.style.setProperty('--fs',Math.round(t*.5)+'px');
   GL.layout();
 }
 function continueLast(){const l=+store.get('lastLevel');if(l>=0&&l<LEVELS.length)startLevel(l)}
