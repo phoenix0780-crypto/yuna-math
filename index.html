@@ -16,7 +16,7 @@
   --gem:#888;
   --sky:#2b1b4e; --sky2:#4a2d7a; --gold:#ffd166; --cream:#fff5e1; --ink:#2a1a3c;
   --red:#ff5c7a; --green:#7be495; --blue:#6fc3ff; --danger:#ff2d55;
-  --c1:#ff5a6e; --c2:#ffa04d; --c3:#ffe066; --c4:#5fdc8a; --c5:#5aa0ff; --c6:#b57cff; --c7:#ff7ac8; --c8:#5ee6ec; --c9:#f4f8ff;
+  --c1:#ff2d3a; --c2:#ff8a00; --c3:#ffe600; --c4:#2ecc40; --c5:#1e90ff; --c6:#5b3cff; --c7:#b100e8; --c8:#00e0d0; --c9:#ffffff;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
 html,body{margin:0;height:100%;background:var(--sky);color:var(--cream);font-family:"Fredoka","Noto Sans TC",system-ui,sans-serif;overflow:hidden;overscroll-behavior:none;position:fixed;width:100%}
@@ -191,7 +191,7 @@ body.webgl .tile.drop{animation:none}
   <div class="sub">點或滑動兩顆相鄰寶石，加起來等於 10 就碎掉！</div>
   <div class="levels" id="levels"></div>
   <button class="big" id="btn-continue" onclick="continueLast()" style="display:none">▶ 繼續上次</button>
-  <div class="ver">v2.14 (3D)</div>
+  <div class="ver">v2.15 (3D)</div>
   
 </div>
 
@@ -389,7 +389,7 @@ const GL=(()=>{
   macaron:['ffb3bd','ffcf9e','fff1a8','b9f0c8','b3d4ff','d8c2ff','ffc2e2','b8f4f7','fffdf5'],
   princess:['ff5c9a','ff8ac5','ffb6dc','f7c6ff','d9a6ff','b47fff','c9b1ff','ffd4f0','fff5fb']
 };
-let COLORS={};function applyPalette(){const p=PALETTES[store.get('pal')]||PALETTES.candy;COLORS={};p.forEach((h,i)=>{COLORS[i+1]=parseInt(h,16);document.documentElement.style.setProperty('--c'+(i+1),'#'+h)})}
+let COLORS={};function applyPalette(){const p=PALETTES[store.get('pal')]||PALETTES.rainbow;COLORS={};p.forEach((h,i)=>{COLORS[i+1]=parseInt(h,16);document.documentElement.style.setProperty('--c'+(i+1),'#'+h)})}
 applyPalette();
 const MATS={
   candy:  {metalness:0,roughness:.06,clearcoat:1,clearcoatRoughness:.03,reflectivity:1,env:.9,opacity:1,emissive:.12,flat:false,glow:.4,core:.12},
@@ -432,7 +432,7 @@ const MATS={
     }catch(e){S.ok=false}
   }
   function buildMats(){
-    const M=MATS[store.get('mat')]||MATS.candy;S.glowBase=M.glow;
+    const M=MATS[store.get('mat')]||MATS.metal;S.glowBase=M.glow;
     for(const n in COLORS){
       S.mats[n]=new THREE.MeshPhysicalMaterial({color:COLORS[n],metalness:M.metalness,roughness:M.roughness,clearcoat:M.clearcoat,clearcoatRoughness:M.clearcoatRoughness,reflectivity:M.reflectivity,envMap:S.env,envMapIntensity:M.env,transparent:M.opacity<1,opacity:M.opacity,emissive:COLORS[n],emissiveIntensity:M.emissive,flatShading:M.flat});
       S.mats['g'+n]=new THREE.SpriteMaterial({map:S.glowTex,color:COLORS[n],transparent:true,opacity:M.glow,blending:THREE.AdditiveBlending,depthWrite:false});
@@ -739,7 +739,7 @@ let picking=null,prevScreen='s-title',paused=false;
 function showSettings(){
   prevScreen=document.querySelector('.screen.on').id;
   if(G&&!G.over&&G.timer){pauseGame();paused=true}
-  $('opt-angel').value=store.get('angel')||'sometimes';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'candy';$('opt-pal').value=store.get('pal')||'candy';$('opt-speed').value=store.get('speed')||'1';$('opt-sfx').value=store.get('clearSfx')||'glass';
+  $('opt-angel').value=store.get('angel')||'sometimes';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'metal';$('opt-pal').value=store.get('pal')||'rainbow';$('opt-speed').value=store.get('speed')||'1';$('opt-sfx').value=store.get('clearSfx')||'glass';
   const box=$('slots');box.innerHTML='';
   ROLES.forEach(r=>{
     const d=document.createElement('div');d.className='slot';
