@@ -191,7 +191,7 @@ body.webgl .tile.drop{animation:none}
   <div class="sub">點或滑動兩顆相鄰寶石，加起來等於 10 就碎掉！</div>
   <div class="levels" id="levels"></div>
   <button class="big" id="btn-continue" onclick="continueLast()" style="display:none">▶ 繼續上次</button>
-  <div class="ver">v2.13 (3D)</div>
+  <div class="ver">v2.14 (3D)</div>
   
 </div>
 
@@ -236,7 +236,7 @@ body.webgl .tile.drop{animation:none}
   <div class="slots" id="slots"></div>
   <div class="opts">
     <div class="opt">消除音效 <span><select id="opt-sfx"><option value="glass">玻璃碎裂</option><option value="crystal">水晶叮</option><option value="bubble">泡泡啵</option><option value="boom">爆炸砰</option><option value="bell">鈴鐺</option><option value="laser">雷射</option><option value="magic">魔法</option><option value="coin">金幣</option><option value="drum">鼓聲</option><option value="drop">水滴</option><option value="none">不要音效</option></select> <button class="ghost" style="margin:0;padding:4px 10px;font-size:14px" onclick="previewSfx()">試聽</button></span></div>
-    <label>寶石材質 <select id="opt-mat"><option value="candy">亮面糖果</option><option value="cut">切割寶石</option><option value="jelly">果凍</option><option value="matte">霧面陶瓷</option><option value="metal">金屬</option><option value="crystal">能量水晶</option></select></label>
+    <label>寶石材質 <select id="opt-mat"><option value="candy">亮面糖果</option><option value="cut">切割寶石</option><option value="jelly">果凍</option><option value="matte">霧面陶瓷</option><option value="metal">金屬</option><option value="crystal">能量水晶</option><option value="energymetal">能量金屬</option></select></label>
     <label>寶石配色 <select id="opt-pal"><option value="candy">糖果</option><option value="rainbow">彩虹純色</option><option value="morandi">莫蘭迪</option><option value="gemstone">寶石名</option><option value="macaron">馬卡龍</option><option value="princess">公主粉紅</option></select></label>
     <label>消除時畫面震動 <select id="opt-shake"><option value="off">關</option><option value="1">輕</option><option value="2">中</option><option value="3">強</option></select></label>
     <label>連擊時畫面震動 <select id="opt-shake2"><option value="on">開</option><option value="off">關</option></select></label>
@@ -397,7 +397,8 @@ const MATS={
   jelly:  {metalness:0,roughness:.15,clearcoat:.6,clearcoatRoughness:.2,reflectivity:.5,env:.4,opacity:.72,emissive:.35,flat:false,glow:.45,core:.25},
   matte:  {metalness:0,roughness:.65,clearcoat:0,clearcoatRoughness:1,reflectivity:.3,env:.15,opacity:1,emissive:.05,flat:false,glow:.15,core:0},
   metal:  {metalness:1,roughness:.22,clearcoat:.3,clearcoatRoughness:.2,reflectivity:1,env:1.3,opacity:1,emissive:0,flat:true,glow:.25,core:0},
-  crystal:{metalness:0,roughness:.05,clearcoat:1,clearcoatRoughness:.05,reflectivity:1,env:.8,opacity:.85,emissive:.6,flat:true,glow:.7,core:.35}
+  crystal:{metalness:0,roughness:.05,clearcoat:1,clearcoatRoughness:.05,reflectivity:1,env:.8,opacity:.85,emissive:.6,flat:true,glow:.7,core:.35},
+  energymetal:{metalness:.85,roughness:.18,clearcoat:.5,clearcoatRoughness:.1,reflectivity:1,env:1.2,opacity:1,emissive:.45,flat:true,glow:.6,core:.3}
 };
   function init(){
     if(S.ok||typeof THREE==='undefined')return;
