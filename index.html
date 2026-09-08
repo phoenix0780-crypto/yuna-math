@@ -254,7 +254,7 @@ body.webgl .tile.drop{animation:none}
 </div>
 
 <script>
-const VERSION='v2.18 (3D)';document.getElementById('ver').textContent=VERSION;
+const VERSION='v2.19 (3D)';document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
 const store={
@@ -281,12 +281,12 @@ function renderFace(el,id){el.innerHTML=faceHTML(id)}
 /* ====== 關卡 ====== */
 /* stepMs: 怪獸每走 1 格的毫秒; path: 路長; target: 要消幾對; hint: 顯示「還差?」; penalty: 配錯怪獸前進; five: 出 5 的權重(1=正常) */
 const LEVELS=[
-  {cols:6,rows:7,stepMs:4000,path:20,target:15,hint:true, penalty:false,five:1,   name:'第 1 關'},
-  {cols:6,rows:7,stepMs:3600,path:20,target:20,hint:false,penalty:false,five:1,   name:'第 2 關'},
-  {cols:6,rows:8,stepMs:3200,path:20,target:25,hint:false,penalty:true, five:.5,  name:'第 3 關'},
-  {cols:7,rows:8,stepMs:2800,path:20,target:30,hint:false,penalty:true, five:.4,  name:'第 4 關'},
-  {cols:7,rows:9,stepMs:2400,path:20,target:35,hint:false,penalty:true, five:.3,  name:'第 5 關'},
-  {cols:7,rows:9,stepMs:1900,path:15,target:40,hint:false,penalty:true, five:.3,  name:'最終 Boss',boss:true}
+  {cols:6,rows:7,stepMs:4000,path:20,target:15,hint:true, penalty:false,five:.5,  name:'第 1 關'},
+  {cols:6,rows:7,stepMs:3600,path:20,target:20,hint:false,penalty:false,five:.5,  name:'第 2 關'},
+  {cols:6,rows:8,stepMs:3200,path:20,target:25,hint:false,penalty:true, five:.25, name:'第 3 關'},
+  {cols:7,rows:8,stepMs:2800,path:20,target:30,hint:false,penalty:true, five:.2,  name:'第 4 關'},
+  {cols:7,rows:9,stepMs:2400,path:20,target:35,hint:false,penalty:true, five:.15, name:'第 5 關'},
+  {cols:7,rows:9,stepMs:1900,path:15,target:40,hint:false,penalty:true, five:.15, name:'最終 Boss',boss:true}
 ];
 const progress=JSON.parse(store.get('progress')||'{"unlocked":1,"stars":{}}');
 function saveProgress(){store.set('progress',JSON.stringify(progress))}
