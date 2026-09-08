@@ -36,7 +36,7 @@ body.danger #space{filter:hue-rotate(-40deg) saturate(1.3)}
 button{font-family:inherit;border:0;cursor:pointer}
 .screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto;overflow:hidden}
 .screen.on{display:flex}
-#s-title,#s-settings{overflow-y:auto;justify-content:flex-start}
+#s-title,#s-settings,#s-board{overflow-y:auto;justify-content:flex-start}
 #s-game{justify-content:flex-start}
 .gridwrap{flex:0 0 auto}
 #s-settings{padding-bottom:calc(30px + env(safe-area-inset-bottom))}
@@ -156,6 +156,18 @@ body.webgl .tile.drop{animation:none}
 @keyframes cnt{0%{transform:scale(2);opacity:0}30%{transform:scale(1);opacity:1}100%{opacity:0}}
 .tut{max-width:360px;font-size:19px;line-height:1.6;text-align:left}
 .tut b{color:var(--gold)}
+.players{display:flex;gap:10px;justify-content:center;margin:4px 0 12px}
+.pl{display:flex;flex-direction:column;align-items:center;gap:4px;background:transparent;color:var(--cream);font-size:14px;font-weight:700;opacity:.5;padding:4px}
+.pl .face{width:56px;height:56px;font-size:30px}
+.pl.on{opacity:1}.pl.on .face{box-shadow:0 0 0 4px var(--gold)}
+.lb{width:100%;max-width:480px;margin:10px 0}
+.lb .row{display:grid;grid-template-columns:32px 44px 1fr 70px 60px;align-items:center;gap:8px;background:rgba(255,255,255,.08);border-radius:14px;padding:6px 10px;margin-bottom:6px;font-size:16px}
+.lb .row.head{background:transparent;opacity:.6;font-size:13px}
+.lb .row .face{width:40px;height:40px;font-size:22px}
+.lb .row.me{outline:2px solid var(--gold)}
+.lb .rk{font-size:20px;font-weight:700;color:var(--gold)}
+.lb .sc{text-align:right;font-weight:700}
+.lb .emp{text-align:center;opacity:.6;padding:30px 0}
 .ver{position:fixed;left:10px;bottom:calc(6px + env(safe-area-inset-bottom));font-size:11px;opacity:.45;z-index:25;pointer-events:none;color:#fff}
 .ring{position:fixed;width:20px;height:20px;border-radius:50%;border:4px solid #fff;box-shadow:0 0 16px #fff,inset 0 0 10px #fff;pointer-events:none;z-index:7;transform:translate(-50%,-50%);animation:ring .5s ease-out forwards}
 @keyframes ring{to{width:110px;height:110px;opacity:0;border-width:1px}}
@@ -189,7 +201,10 @@ body.webgl .tile.drop{animation:none}
 <div class="screen on" id="s-title">
   <h1 style="font-size:clamp(32px,9vw,52px);text-align:center;line-height:1.2">恐怖大怪獸!!</h1>
   <div class="sub">點或滑動兩顆相鄰寶石，加起來等於 10 就碎掉！</div>
+  <div class="sub" style="margin-bottom:4px">誰在玩？</div>
+  <div class="players" id="players"></div>
   <div class="levels" id="levels"></div>
+  <button class="ghost" onclick="showBoard()">🏆 排行榜</button>
   <button class="big" id="btn-continue" onclick="continueLast()" style="display:none">▶ 繼續上次</button>
   
 </div>
@@ -198,7 +213,7 @@ body.webgl .tile.drop{animation:none}
 <div class="screen" id="s-game">
   <div class="hud">
     <span id="hud-level">第 1 關</span>
-    <span class="goal"><span id="hud-cleared">0</span> / <span id="hud-target">15</span> 對</span>
+    <span class="goal"><span id="hud-cleared">0</span> / <span id="hud-target">15</span> 對 · <span id="hud-score">0</span> 分</span>
     <span id="hud-combo"></span>
   </div>
   <div class="track">
@@ -229,6 +244,14 @@ body.webgl .tile.drop{animation:none}
 <button id="gear" onclick="showSettings()" title="設定">⚙️</button>
 <div class="ver" id="ver"></div>
 
+<!-- 排行榜 -->
+<div class="screen" id="s-board">
+  <div style="width:100%;display:flex;align-items:center;justify-content:space-between"><button class="ghost" style="margin:0" onclick="goTitle()">← 返回</button><h1 style="font-size:28px;margin:12px 0">🏆 排行榜</h1><span style="width:80px"></span></div>
+  <div class="opts" style="grid-template-columns:1fr;max-width:480px"><label>關卡 <select id="lb-level"><option value="all">全部</option></select></label></div>
+  <div class="lb" id="lb"></div>
+  <button class="ghost" style="border-color:var(--red);color:var(--red)" onclick="clearBoard()">清除排行榜</button>
+</div>
+
 <!-- 角色設定頁 -->
 <div class="screen" id="s-settings">
   <div style="width:100%;display:flex;align-items:center;justify-content:space-between"><button class="ghost" style="margin:0" onclick="closeSettings()">← 返回</button><h1 style="font-size:28px;margin:12px 0">設定</h1><span style="width:80px"></span></div>
@@ -254,7 +277,7 @@ body.webgl .tile.drop{animation:none}
 </div>
 
 <script>
-const VERSION='v2.19 (3D)';document.getElementById('ver').textContent=VERSION;
+const VERSION='v2.20 (3D)';document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
 const store={
@@ -278,6 +301,19 @@ function faceHTML(id){
 }
 function renderFace(el,id){el.innerHTML=faceHTML(id)}
 
+/* ====== 玩家與排行榜 ====== */
+const PLAYERS=[{id:'princess',name:'Yuna'},{id:'monster',name:'Bryson'},{id:'angel',name:'媽媽'},{id:'boss',name:'爸爸'}];
+function curPlayer(){return store.get('player')||'princess'}
+function renderPlayers(){const b=$('players');b.innerHTML='';PLAYERS.forEach(p=>{const d=document.createElement('button');d.className='pl'+(curPlayer()===p.id?' on':'');d.innerHTML=`<div class="face">${faceHTML(p.id)}</div>${p.name}`;d.onclick=()=>{store.set('player',p.id);renderPlayers()};b.appendChild(d)})}
+function getBoard(){try{return JSON.parse(store.get('board')||'[]')}catch(e){return []}}
+function addScore(entry){const b=getBoard();b.push(entry);b.sort((x,y)=>y.score-x.score);store.set('board',JSON.stringify(b.slice(0,50)));return b.findIndex(e=>e===entry)+1}
+function showBoard(){const sel=$('lb-level');if(sel.options.length===1)LEVELS.forEach((lv,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=lv.name;sel.appendChild(o)});renderBoard();show('s-board')}
+function renderBoard(){const f=$('lb-level').value,box=$('lb');let b=getBoard();if(f!=='all')b=b.filter(e=>e.level==f);b=b.slice(0,10);
+  box.innerHTML='<div class="row head"><span>#</span><span></span><span>玩家 / 關卡</span><span>星星</span><span class="sc">分數</span></div>';
+  if(!b.length){box.innerHTML+='<div class="emp">還沒有紀錄，去打敗暴龍吧！</div>';return}
+  b.forEach((e,i)=>{const p=PLAYERS.find(x=>x.id===e.player)||PLAYERS[0];const me=e.player===curPlayer();
+    box.innerHTML+=`<div class="row${me?' me':''}"><span class="rk">${i+1}</span><div class="face">${faceHTML(p.id)}</div><span>${p.name}<br><small style="opacity:.7">${LEVELS[e.level-1].name} · ${e.date}</small></span><span style="color:#ffd166">${'★'.repeat(e.stars)}</span><span class="sc">${e.score}</span></div>`})}
+function clearBoard(){if(!confirm('確定清除所有排行榜紀錄？'))return;store.del('board');renderBoard();toast('已清除')}
 /* ====== 關卡 ====== */
 /* stepMs: 怪獸每走 1 格的毫秒; path: 路長; target: 要消幾對; hint: 顯示「還差?」; penalty: 配錯怪獸前進; five: 出 5 的權重(1=正常) */
 const LEVELS=[
@@ -333,7 +369,7 @@ function toggleMute(){muted=!muted;store.set('muted',muted?'1':'0');document.get
 /* ====== 畫面切換 ====== */
 const $=id=>document.getElementById(id);
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');$('gear').classList.toggle('hide',id!=='s-title')}
-function goTitle(){stopGame();document.body.classList.remove('danger');renderLevels();show('s-title')}
+function goTitle(){stopGame();document.body.classList.remove('danger');renderLevels();renderPlayers();show('s-title')}
 function renderLevels(){
   const last=+store.get('lastLevel');const bc=$('btn-continue');if(last>=0&&store.get('lastLevel')!==null){bc.style.display='';bc.textContent=`▶ 繼續 ${LEVELS[last].name}`}else bc.style.display='none';
   const box=$('levels');box.innerHTML='';
@@ -352,8 +388,8 @@ function renderLevels(){
 let G=null;
 function startLevel(i){
   const lv=LEVELS[i];
-  G={i,lv,board:[],sel:null,cleared:0,mpos:0,timer:null,idle:0,lastClear:0,combo:0,hits:0,energy:0,busy:false,over:false,wrong:0,angelCount:0};
-  $('hud-level').textContent=lv.name;$('hud-target').textContent=lv.target;$('hud-cleared').textContent=0;$('hud-combo').textContent='';
+  G={i,lv,board:[],sel:null,cleared:0,mpos:0,timer:null,idle:0,lastClear:0,combo:0,hits:0,energy:0,busy:false,over:false,wrong:0,angelCount:0,score:0,start:Date.now()};
+  $('hud-level').textContent=lv.name;$('hud-target').textContent=lv.target;$('hud-cleared').textContent=0;$('hud-combo').textContent='';$('hud-score').textContent=0;
   $('mute').textContent=muted?'🔇 靜音':'🔊 聲音';
   renderFace($('princess-face'),'princess');renderFace($('monster-face'),lv.boss?'boss':'monster');renderFace($('angel-face'),'angel');
   $('monster').classList.toggle('boss',!!lv.boss);$('monster-tag').textContent=lv.boss?'爸爸大魔王':'Bryson';$('m-crown').style.display=lv.boss?'':'none';
@@ -585,13 +621,14 @@ const up=e=>{if(!D.active)return;endDrag();if(!D.moved&&D.sameSel)clearSel();};
 g.addEventListener('pointerup',up);g.addEventListener('pointercancel',up);
 document.addEventListener('pointerup',e=>{if(D.active)endDrag()});}
 function clearSel(keepDiff){if(G.sel){tileAt(G.sel[0],G.sel[1]).classList.remove('sel');GL.select(G.sel[0],G.sel[1],false);G.sel=null}if(!keepDiff)$('diff').textContent=''}
+function addPts(n){G.score+=n;$('hud-score').textContent=G.score}
 function eliminate(r1,c1,r2,c2){
   G.busy=true;const now=Date.now();
   G.combo=(now-G.lastClear<5000)?G.combo+1:1;G.lastClear=now;
   const t1=tileAt(r1,c1),t2=tileAt(r2,c2);t1.classList.add('pop');t2.classList.add('pop');GL.pop(r1,c1);GL.pop(r2,c2);
   fx(t1,'10!');shatter(t1);shatter(t2);sfx.shatter();vib(G.combo>=2?[40,30,40,30,60]:40);shake(G.combo>=2);
   if(G.combo>=2){sfx.combo();$('hud-combo').textContent=`🔥 連擊 x${G.combo}`;}else{sfx.ok();$('hud-combo').textContent=''}
-  G.cleared++;$('hud-cleared').textContent=G.cleared;
+  G.cleared++;$('hud-cleared').textContent=G.cleared;addPts(10+(G.combo>=2?5*Math.min(G.combo,10):0));
   const push=G.combo>=2?3:2;moveMonster(-push,'hit');
   if(G.combo===3)angel('combo');
   setTimeout(()=>{
@@ -662,7 +699,7 @@ function special(){ // 公主放大絕：消掉最多 4 對
   const used=new Set();say('p','看我的！✨',1500);sfx.win();
   picks.forEach(([r1,c1,r2,c2])=>{const k1=r1+','+c1,k2=r2+','+c2;if(used.has(k1)||used.has(k2))return;used.add(k1);used.add(k2);
     tileAt(r1,c1).classList.add('pop');tileAt(r2,c2).classList.add('pop');GL.pop(r1,c1);GL.pop(r2,c2);G.board[r1][c1]=0;G.board[r2][c2]=0;G.cleared++;});
-  $('hud-cleared').textContent=G.cleared;
+  $('hud-cleared').textContent=G.cleared;addPts(20);
   setTimeout(()=>{gravity();if(G.cleared>=G.lv.target)win();else if(countMoves()===0)shuffle()},400);
 }
 let acc=0;
@@ -695,11 +732,13 @@ function hearts(){for(let i=0;i<8;i++){const h=document.createElement('div');h.c
 function win(){
   stopGame();sfx.win();document.body.classList.remove('danger');
   const n=G.i+1,stars=G.wrong===0?3:G.wrong<=3?2:1;
+  const secs=Math.round((Date.now()-G.start)/1000),bonus=Math.max(0,180-secs)*2+stars*50+(G.lv.boss?200:0);addPts(bonus);
+  const rank=addScore({player:curPlayer(),level:n,score:G.score,stars,date:new Date().toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'})});
   progress.stars[n]=Math.max(progress.stars[n]||0,stars);
   if(n>=progress.unlocked&&n<LEVELS.length)progress.unlocked=n+1;saveProgress();store.set('lastLevel',Math.min(n,LEVELS.length-1));
   $('ov-stars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);
   $('ov-title').textContent=G.lv.boss?'打敗爸爸大魔王！':'公主逃進城堡了！';
-  $('ov-text').textContent=G.lv.boss?'全家一起放煙火 🎆🎆🎆':`消了 ${G.cleared} 對，${G.lv.boss?'':'怪獸摔倒了 🤕'}`;
+  $('ov-text').innerHTML=(G.lv.boss?'全家一起放煙火 🎆🎆🎆':`消了 ${G.cleared} 對，暴龍摔倒了 🤕`)+`<br><b style="color:var(--gold)">${G.score} 分</b>（時間加成 +${bonus}）· 排行榜第 ${rank} 名`;
   $('ov-family').innerHTML=G.lv.boss?ROLES.map(r=>`<div class="face">${faceHTML(r.id)}</div>`).join(''):`<div class="face">${faceHTML('princess')}</div><div class="face">${faceHTML('angel')}</div>`;
   const b=$('ov-btn');
   if(n<LEVELS.length){b.textContent='下一關 ▶';b.onclick=()=>startLevel(n)}else{b.textContent='再玩一次';b.onclick=()=>startLevel(G.i)}
@@ -783,7 +822,8 @@ function swapRoles(){const a=store.get('face_princess'),b=store.get('face_monste
   a?store.set('face_monster',a):store.del('face_monster');b?store.set('face_princess',b):store.del('face_princess');
   renderFace($('slot-princess'),'princess');renderFace($('slot-monster'),'monster');toast((a||b)?'已互換照片':'還沒上傳照片，沒有東西可以換');}
 
-renderLevels();
+$('lb-level').onchange=renderBoard;
+renderLevels();renderPlayers();
 </script>
 </body>
 </html>
