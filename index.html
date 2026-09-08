@@ -191,7 +191,7 @@ body.webgl .tile.drop{animation:none}
   <div class="sub">點或滑動兩顆相鄰寶石，加起來等於 10 就碎掉！</div>
   <div class="levels" id="levels"></div>
   <button class="big" id="btn-continue" onclick="continueLast()" style="display:none">▶ 繼續上次</button>
-  <div class="ver">v2.12 (3D)</div>
+  <div class="ver">v2.13 (3D)</div>
   
 </div>
 
@@ -236,6 +236,8 @@ body.webgl .tile.drop{animation:none}
   <div class="slots" id="slots"></div>
   <div class="opts">
     <div class="opt">消除音效 <span><select id="opt-sfx"><option value="glass">玻璃碎裂</option><option value="crystal">水晶叮</option><option value="bubble">泡泡啵</option><option value="boom">爆炸砰</option><option value="bell">鈴鐺</option><option value="laser">雷射</option><option value="magic">魔法</option><option value="coin">金幣</option><option value="drum">鼓聲</option><option value="drop">水滴</option><option value="none">不要音效</option></select> <button class="ghost" style="margin:0;padding:4px 10px;font-size:14px" onclick="previewSfx()">試聽</button></span></div>
+    <label>寶石材質 <select id="opt-mat"><option value="candy">亮面糖果</option><option value="cut">切割寶石</option><option value="jelly">果凍</option><option value="matte">霧面陶瓷</option><option value="metal">金屬</option><option value="crystal">能量水晶</option></select></label>
+    <label>寶石配色 <select id="opt-pal"><option value="candy">糖果</option><option value="rainbow">彩虹純色</option><option value="morandi">莫蘭迪</option><option value="gemstone">寶石名</option><option value="macaron">馬卡龍</option><option value="princess">公主粉紅</option></select></label>
     <label>消除時畫面震動 <select id="opt-shake"><option value="off">關</option><option value="1">輕</option><option value="2">中</option><option value="3">強</option></select></label>
     <label>連擊時畫面震動 <select id="opt-shake2"><option value="on">開</option><option value="off">關</option></select></label>
     <label>手機震動 <select id="opt-vib"><option value="on">開</option><option value="off">關</option></select></label>
@@ -379,7 +381,24 @@ document.addEventListener('pointerdown',()=>{try{actx=actx||new (window.AudioCon
 /* ====== 3D 寶石（Three.js） ====== */
 const GL=(()=>{
   const S={ok:false,meshes:[],geos:{},mats:{},t:0,dirty:false,raf:null};
-  const COLORS={1:0xff5a6e,2:0xffa04d,3:0xffe066,4:0x5fdc8a,5:0x5aa0ff,6:0xb57cff,7:0xff7ac8,8:0x5ee6ec,9:0xf4f8ff};
+  const PALETTES={
+  candy:  ['ff5a6e','ffa04d','ffe066','5fdc8a','5aa0ff','b57cff','ff7ac8','5ee6ec','f4f8ff'],
+  rainbow:['ff2d3a','ff8a00','ffe600','2ecc40','1e90ff','5b3cff','b100e8','00e0d0','ffffff'],
+  morandi:['b5686a','d3a684','c9b36c','8fa58b','8fa4b8','a394ad','c797a0','8fb0b0','e6e2d8'],
+  gemstone:['d0103a','ff9500','ffd700','0b8a3c','0f3fb8','7b2cbf','ffb3d1','40c4d6','e8f6ff'],
+  macaron:['ffb3bd','ffcf9e','fff1a8','b9f0c8','b3d4ff','d8c2ff','ffc2e2','b8f4f7','fffdf5'],
+  princess:['ff5c9a','ff8ac5','ffb6dc','f7c6ff','d9a6ff','b47fff','c9b1ff','ffd4f0','fff5fb']
+};
+let COLORS={};function applyPalette(){const p=PALETTES[store.get('pal')]||PALETTES.candy;COLORS={};p.forEach((h,i)=>{COLORS[i+1]=parseInt(h,16);document.documentElement.style.setProperty('--c'+(i+1),'#'+h)})}
+applyPalette();
+const MATS={
+  candy:  {metalness:0,roughness:.06,clearcoat:1,clearcoatRoughness:.03,reflectivity:1,env:.9,opacity:1,emissive:.12,flat:false,glow:.4,core:.12},
+  cut:    {metalness:.1,roughness:.12,clearcoat:1,clearcoatRoughness:.08,reflectivity:.8,env:.6,opacity:.9,emissive:.22,flat:true,glow:.4,core:.12},
+  jelly:  {metalness:0,roughness:.15,clearcoat:.6,clearcoatRoughness:.2,reflectivity:.5,env:.4,opacity:.72,emissive:.35,flat:false,glow:.45,core:.25},
+  matte:  {metalness:0,roughness:.65,clearcoat:0,clearcoatRoughness:1,reflectivity:.3,env:.15,opacity:1,emissive:.05,flat:false,glow:.15,core:0},
+  metal:  {metalness:1,roughness:.22,clearcoat:.3,clearcoatRoughness:.2,reflectivity:1,env:1.3,opacity:1,emissive:0,flat:true,glow:.25,core:0},
+  crystal:{metalness:0,roughness:.05,clearcoat:1,clearcoatRoughness:.05,reflectivity:1,env:.8,opacity:.85,emissive:.6,flat:true,glow:.7,core:.35}
+};
   function init(){
     if(S.ok||typeof THREE==='undefined')return;
     try{
@@ -404,17 +423,22 @@ const GL=(()=>{
       const cv=document.createElement('canvas');cv.width=cv.height=128;const x=cv.getContext('2d');
       const gr=x.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,255,255,.9)');gr.addColorStop(.35,'rgba(255,255,255,.35)');gr.addColorStop(1,'rgba(255,255,255,0)');
       x.fillStyle=gr;x.fillRect(0,0,128,128);S.glowTex=new THREE.CanvasTexture(cv);
-      for(const n in COLORS){
-        S.mats[n]=new THREE.MeshPhysicalMaterial({color:COLORS[n],metalness:0,roughness:.06,clearcoat:1,clearcoatRoughness:.03,reflectivity:1,envMap:S.env,envMapIntensity:.9,transparent:false,emissive:COLORS[n],emissiveIntensity:.12,flatShading:false});
-        S.mats['g'+n]=new THREE.SpriteMaterial({map:S.glowTex,color:COLORS[n],transparent:true,opacity:.4,blending:THREE.AdditiveBlending,depthWrite:false});
-        S.mats['c'+n]=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.12,blending:THREE.AdditiveBlending,depthWrite:false});
-      }
+      buildMats();
       const sc=document.createElement('canvas');sc.width=sc.height=64;const sx=sc.getContext('2d');sx.strokeStyle='#fff';sx.lineWidth=3;sx.lineCap='round';
       sx.beginPath();sx.moveTo(32,2);sx.lineTo(32,62);sx.moveTo(2,32);sx.lineTo(62,32);sx.moveTo(14,14);sx.lineTo(50,50);sx.moveTo(50,14);sx.lineTo(14,50);sx.stroke();
       S.mats.spark=new THREE.SpriteMaterial({map:new THREE.CanvasTexture(sc),transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false});
       S.ok=true;document.body.classList.add('webgl');loop();
     }catch(e){S.ok=false}
   }
+  function buildMats(){
+    const M=MATS[store.get('mat')]||MATS.candy;S.glowBase=M.glow;
+    for(const n in COLORS){
+      S.mats[n]=new THREE.MeshPhysicalMaterial({color:COLORS[n],metalness:M.metalness,roughness:M.roughness,clearcoat:M.clearcoat,clearcoatRoughness:M.clearcoatRoughness,reflectivity:M.reflectivity,envMap:S.env,envMapIntensity:M.env,transparent:M.opacity<1,opacity:M.opacity,emissive:COLORS[n],emissiveIntensity:M.emissive,flatShading:M.flat});
+      S.mats['g'+n]=new THREE.SpriteMaterial({map:S.glowTex,color:COLORS[n],transparent:true,opacity:M.glow,blending:THREE.AdditiveBlending,depthWrite:false});
+      S.mats['c'+n]=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:M.core,blending:THREE.AdditiveBlending,depthWrite:false});
+    }
+  }
+  function restyle(){applyPalette();if(S.ok){buildMats();S.dirty=true}}
   function layout(){
     if(!G)return;init();if(!S.ok)return;
     const g=$('grid'),w=g.clientWidth,h=g.clientHeight;if(!w||!h)return;
@@ -456,12 +480,12 @@ const GL=(()=>{
       let sc=o.base*bob*(o.sel?1.25:1);
       if(o.pop>0){o.pop=Math.min(1.6,o.pop+.15);sc=o.base*(o.pop<1.2?o.pop*1.3:Math.max(0,1.6-o.pop)*3)}
       o.m.scale.setScalar(sc);o.core.scale.setScalar(sc*.55);
-      o.glow.material.opacity=o.sel?.9:.35+Math.sin(S.t*3+o.c)*.1;
+      o.glow.material.opacity=o.sel?Math.min(1,S.glowBase+.5):S.glowBase-.05+Math.sin(S.t*3+o.c)*.08;
       o.glow.scale.setScalar(o.base*(o.sel?3.4:2.6)*bob);
     }
     S.renderer.render(S.scene,S.cam);
   }
-  return {layout,rebuildSoon(){S.dirty=true},select,pop};
+  return {layout,rebuildSoon(){S.dirty=true},select,pop,restyle};
 })();
 
 /* ====== 盤面 ====== */
@@ -714,7 +738,7 @@ let picking=null,prevScreen='s-title',paused=false;
 function showSettings(){
   prevScreen=document.querySelector('.screen.on').id;
   if(G&&!G.over&&G.timer){pauseGame();paused=true}
-  $('opt-angel').value=store.get('angel')||'sometimes';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-speed').value=store.get('speed')||'1';$('opt-sfx').value=store.get('clearSfx')||'glass';
+  $('opt-angel').value=store.get('angel')||'sometimes';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'candy';$('opt-pal').value=store.get('pal')||'candy';$('opt-speed').value=store.get('speed')||'1';$('opt-sfx').value=store.get('clearSfx')||'glass';
   const box=$('slots');box.innerHTML='';
   ROLES.forEach(r=>{
     const d=document.createElement('div');d.className='slot';
@@ -735,6 +759,8 @@ $('opt-vib').onchange=e=>store.set('vib',e.target.value);
 $('opt-shake').onchange=e=>store.set('shake',e.target.value);
 $('opt-shake2').onchange=e=>store.set('shake2',e.target.value);
 $('opt-dev').onchange=e=>store.set('dev',e.target.value); // DEV-UNLOCK
+$('opt-mat').onchange=e=>{store.set('mat',e.target.value);GL.restyle()};
+$('opt-pal').onchange=e=>{store.set('pal',e.target.value);GL.restyle()};
 $('opt-speed').onchange=e=>store.set('speed',e.target.value);
 function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1600)}
 function resetProgress(){if(!confirm('確定要清除所有星星和關卡進度嗎？'))return;progress.unlocked=1;progress.stars={};saveProgress();store.del('lastLevel');toast('已重置進度')}
