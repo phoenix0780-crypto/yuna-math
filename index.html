@@ -278,7 +278,7 @@ body.webgl .tile.drop{animation:none}
 </div>
 
 <script>
-const VERSION='v2.24 (3D)';document.getElementById('ver').textContent=VERSION;
+const VERSION='v2.25 (3D)';document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
 const store={
@@ -462,11 +462,11 @@ const GL=(()=>{
 let COLORS={};function applyPalette(){const p=PALETTES[store.get('pal')]||PALETTES.rainbow;COLORS={};p.forEach((h,i)=>{COLORS[i+1]=parseInt(h,16);document.documentElement.style.setProperty('--c'+(i+1),'#'+h)})}
 applyPalette();
 const MATS={
-  candy:  {metalness:0,roughness:.06,clearcoat:1,clearcoatRoughness:.03,reflectivity:1,env:.9,opacity:1,emissive:.12,flat:false,glow:.4,core:.12},
+  candy:  {metalness:0,roughness:.06,clearcoat:1,clearcoatRoughness:.03,reflectivity:1,env:.9,opacity:1,emissive:.12,flat:true,glow:.4,core:.12},
   cut:    {metalness:.1,roughness:.12,clearcoat:1,clearcoatRoughness:.08,reflectivity:.8,env:.6,opacity:.9,emissive:.22,flat:true,glow:.4,core:.12},
-  jelly:  {metalness:0,roughness:.15,clearcoat:.6,clearcoatRoughness:.2,reflectivity:.5,env:.4,opacity:.72,emissive:.35,flat:false,glow:.45,core:.25},
-  matte:  {metalness:0,roughness:.65,clearcoat:0,clearcoatRoughness:1,reflectivity:.3,env:.15,opacity:1,emissive:.05,flat:false,glow:.15,core:0},
-  metal:  {metalness:1,roughness:.22,clearcoat:.3,clearcoatRoughness:.2,reflectivity:1,env:1.3,opacity:1,emissive:0,flat:true,glow:.25,core:0},
+  jelly:  {metalness:0,roughness:.15,clearcoat:.6,clearcoatRoughness:.2,reflectivity:.5,env:.4,opacity:.72,emissive:.35,flat:true,glow:.45,core:.25},
+  matte:  {metalness:0,roughness:.65,clearcoat:0,clearcoatRoughness:1,reflectivity:.3,env:.15,opacity:1,emissive:.05,flat:true,glow:.15,core:0},
+  metal:  {metalness:1,roughness:.12,clearcoat:.6,clearcoatRoughness:.08,reflectivity:1,env:1.6,opacity:1,emissive:0,flat:true,glow:.25,core:0},
   crystal:{metalness:0,roughness:.05,clearcoat:1,clearcoatRoughness:.05,reflectivity:1,env:.8,opacity:.85,emissive:.6,flat:true,glow:.7,core:.35},
   energymetal:{metalness:.85,roughness:.18,clearcoat:.5,clearcoatRoughness:.1,reflectivity:1,env:1.2,opacity:1,emissive:.45,flat:true,glow:.6,core:.3}
 };
@@ -477,18 +477,19 @@ const MATS={
       S.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
       S.scene=new THREE.Scene();
       S.cam=new THREE.OrthographicCamera(0,1,0,-1,-500,500);S.cam.position.z=100;
-      S.scene.add(new THREE.AmbientLight(0xffffff,.45));
-      const d=new THREE.DirectionalLight(0xffffff,1.2);d.position.set(-1,1.2,2);S.scene.add(d);
-      const rim=new THREE.DirectionalLight(0x99bbff,.7);rim.position.set(1,-1,1);S.scene.add(rim);
+      S.scene.add(new THREE.AmbientLight(0xffffff,.15));
+      const d=new THREE.DirectionalLight(0xffffff,2.0);d.position.set(-1,1.4,1.6);S.scene.add(d);
+      const rim=new THREE.DirectionalLight(0x8fb4ff,1.0);rim.position.set(1.2,-.8,.8);S.scene.add(rim);
+      const fill=new THREE.DirectionalLight(0xffe0b0,.5);fill.position.set(.6,.2,-1);S.scene.add(fill);
       const p=new THREE.PointLight(0xfff0c0,.6,0);p.position.set(200,-100,220);S.scene.add(p);S.light=p;
       // 切割寶石：冠部(上窄下寬短柱)＋亭部(倒圓錐)，各數字不同切面數與比例
       const cut=(n,top,h,pav)=>{const g=new THREE.Group();const crown=new THREE.CylinderGeometry(top,1,h,n,1,false);crown.translate(0,h/2,0);
         const pv=new THREE.ConeGeometry(1,pav,n,1,false);pv.rotateX(Math.PI);pv.translate(0,-pav/2,0);g.userData={crown,pv};return g};
-      const SPEC={1:[3,.5,.6,1.1],2:[4,.5,.6,1.2],3:[5,.5,.6,1.1],4:[6,.55,.6,1.1],5:[7,.5,.65,1.15],6:[8,.55,.6,1.1],7:[9,.55,.6,1.2],8:[10,.55,.6,1.1],9:[12,.6,.6,1.1]};
+      const SPEC={1:[3,.45,.7,1.2],2:[4,.45,.7,1.3],3:[5,.45,.7,1.2],4:[6,.5,.7,1.2],5:[7,.45,.75,1.25],6:[8,.5,.7,1.2],7:[9,.5,.7,1.3],8:[10,.5,.7,1.2],9:[12,.55,.7,1.2]};
       S.geos={};for(const n in SPEC){const [k,top,h,pav]=SPEC[n];const g=cut(k,top,h,pav).userData;g.crown.computeVertexNormals();g.pv.computeVertexNormals();S.geos[n]=g}
       // 環境貼圖（漸層天空盒）讓切面有反光
       const mk=(c1,c2)=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');const g=x.createLinearGradient(0,0,0,64);g.addColorStop(0,c1);g.addColorStop(1,c2);x.fillStyle=g;x.fillRect(0,0,64,64);
-        x.fillStyle='rgba(255,255,255,.95)';x.beginPath();x.ellipse(24,12,14,6,0,0,Math.PI*2);x.fill();return c};
+        x.fillStyle='rgba(255,255,255,.95)';x.fillRect(0,6,64,8);x.fillStyle='rgba(0,0,0,.6)';x.fillRect(0,22,64,10);x.fillStyle='rgba(255,255,255,.6)';x.fillRect(0,40,64,5);return c};
       const env=new THREE.CubeTexture([mk('#ffffff','#5a4a8a'),mk('#cfd8ff','#3a2a6a'),mk('#ffffff','#e0e6ff'),mk('#3a2a6a','#0a0820'),mk('#ffffff','#5a4a8a'),mk('#cfd8ff','#3a2a6a')]);env.needsUpdate=true;S.env=env;
       // 光暈貼圖
       const cv=document.createElement('canvas');cv.width=cv.height=128;const x=cv.getContext('2d');
@@ -529,7 +530,7 @@ const MATS={
       const grp=new THREE.Group();grp.position.set(cx,-cy,0);
       const glow=new THREE.Sprite(S.mats['g'+v]);glow.scale.set(b.width*1.4,b.width*1.4,1);glow.position.z=-5;grp.add(glow);
       const m=new THREE.Group();m.add(new THREE.Mesh(S.geos[v].crown,S.mats[v]));m.add(new THREE.Mesh(S.geos[v].pv,S.mats[v]));
-      m.scale.setScalar(sz);m.rotation.set(.55,Math.random()*6,0);grp.add(m);
+      m.scale.setScalar(sz);m.rotation.set(.7,Math.random()*6,0);grp.add(m);
       const core=new THREE.Group();core.add(new THREE.Mesh(S.geos[v].crown,S.mats['c'+v]));core.add(new THREE.Mesh(S.geos[v].pv,S.mats['c'+v]));core.scale.setScalar(sz*.45);core.rotation.copy(m.rotation);grp.add(core);
       const sp=new THREE.Sprite(S.mats.spark);sp.scale.set(0,0,1);sp.position.set(sz*.5,sz*.5,20);grp.add(sp);
       S.scene.add(grp);S.meshes.push({grp,m,core,glow,sp,r,c,v,spin:.4+Math.random()*.4,sel:false,pop:0,base:sz,tw:Math.random()*10});
@@ -545,7 +546,7 @@ const MATS={
     if(S.dirty)rebuild();
     S.t+=.016;
     for(const o of S.meshes){
-      const spd=o.sel?4:o.spin;o.m.rotation.y+=.012*spd;o.m.rotation.x=.55+Math.sin(S.t*.7+o.r)*.12;o.core.rotation.copy(o.m.rotation);
+      const spd=o.sel?4:o.spin;o.m.rotation.y+=.012*spd;o.m.rotation.x=.7+Math.sin(S.t*.7+o.r)*.15;o.core.rotation.copy(o.m.rotation);
       const tw=(S.t*.6+o.tw)%7;const ts=tw<.6?Math.sin(tw/.6*Math.PI)*o.base*1.1:0;o.sp.scale.set(ts,ts,1);o.sp.material.rotation=S.t;
       const bob=1+Math.sin(S.t*2+o.r+o.c)*.04;
       let sc=o.base*bob*(o.sel?1.25:1);
