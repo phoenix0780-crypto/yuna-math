@@ -278,7 +278,7 @@ body.webgl .tile.drop{animation:none}
 </div>
 
 <script>
-const VERSION='v2.25 (3D)';document.getElementById('ver').textContent=VERSION;
+const VERSION='v2.26 (3D)';document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
 const store={
@@ -503,7 +503,7 @@ const MATS={
     }catch(e){S.ok=false}
   }
   function buildMats(){
-    const M=MATS[store.get('mat')]||MATS.metal;S.glowBase=M.glow;
+    const M=MATS[store.get('mat')]||MATS.energymetal;S.glowBase=M.glow;
     for(const n in COLORS){
       S.mats[n]=new THREE.MeshPhysicalMaterial({color:COLORS[n],metalness:M.metalness,roughness:M.roughness,clearcoat:M.clearcoat,clearcoatRoughness:M.clearcoatRoughness,reflectivity:M.reflectivity,envMap:S.env,envMapIntensity:M.env,transparent:M.opacity<1,opacity:M.opacity,emissive:COLORS[n],emissiveIntensity:M.emissive,flatShading:M.flat});
       S.mats['g'+n]=new THREE.SpriteMaterial({map:S.glowTex,color:COLORS[n],transparent:true,opacity:M.glow,blending:THREE.AdditiveBlending,depthWrite:false});
@@ -813,7 +813,7 @@ let picking=null,prevScreen='s-title',paused=false;
 function showSettings(){
   prevScreen=document.querySelector('.screen.on').id;
   if(G&&!G.over&&G.timer){pauseGame();paused=true}
-  $('opt-angel').value=store.get('angel')||'sometimes';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'metal';$('opt-pal').value=store.get('pal')||'rainbow';$('opt-speed').value=store.get('speed')||'1.3';$('opt-sfx').value=store.get('clearSfx')||'magic';$('opt-bgm').value=store.get('bgm')||'on';
+  $('opt-angel').value=store.get('angel')||'sometimes';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'energymetal';$('opt-pal').value=store.get('pal')||'rainbow';$('opt-speed').value=store.get('speed')||'1.3';$('opt-sfx').value=store.get('clearSfx')||'magic';$('opt-bgm').value=store.get('bgm')||'on';
   const box=$('slots');box.innerHTML='';
   ROLES.forEach(r=>{
     const d=document.createElement('div');d.className='slot';
