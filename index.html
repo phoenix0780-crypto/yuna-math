@@ -191,7 +191,7 @@ body.webgl .tile.drop{animation:none}
   <div class="sub">點或滑動兩顆相鄰寶石，加起來等於 10 就碎掉！</div>
   <div class="levels" id="levels"></div>
   <button class="big" id="btn-continue" onclick="continueLast()" style="display:none">▶ 繼續上次</button>
-  <div class="ver">v2.15 (3D)</div>
+  <div class="ver">v2.16 (3D)</div>
   
 </div>
 
@@ -241,7 +241,7 @@ body.webgl .tile.drop{animation:none}
     <label>消除時畫面震動 <select id="opt-shake"><option value="off">關</option><option value="1">輕</option><option value="2">中</option><option value="3">強</option></select></label>
     <label>連擊時畫面震動 <select id="opt-shake2"><option value="on">開</option><option value="off">關</option></select></label>
     <label>手機震動 <select id="opt-vib"><option value="on">開</option><option value="off">關</option></select></label>
-    <label>暴龍速度 <select id="opt-speed"><option value="0.75">慢一點</option><option value="1" selected>普通</option><option value="1.3">快一點</option></select></label>
+    <label>暴龍速度 <select id="opt-speed"><option value="0.75">慢一點</option><option value="1">普通</option><option value="1.3" selected>快一點</option></select></label>
     <label>鼓勵天使出現 <select id="opt-angel"><option value="often">常常</option><option value="sometimes" selected>偶爾</option><option value="off">關閉</option></select></label>
     <div class="opt">公主與怪獸互換 <button class="ghost" style="margin:0;padding:6px 14px" onclick="swapRoles()">互換</button></div>
   </div>
@@ -668,7 +668,7 @@ let acc=0;
 function tick(){
   if(G.busy||G.over)return;
   acc+=100;G.idle+=100;
-  let step=G.lv.stepMs/(+store.get('speed')||1);if(G.idle>8000)step*=.5; // 太久沒動作加速
+  let step=G.lv.stepMs/(+store.get('speed')||1.3);if(G.idle>8000)step*=.5; // 太久沒動作加速
   if(acc>=step){acc=0;sfx.step();moveMonster(1,'shake');if(G.idle>8000&&G.idle%8000<200){say('m','吼——！',800);sfx.roar();$('monster').classList.add('roar');setTimeout(()=>$('monster').classList.remove('roar'),600)}}
   if(G.idle>10000&&G.idle%10000<200)hint();
 }
@@ -739,7 +739,7 @@ let picking=null,prevScreen='s-title',paused=false;
 function showSettings(){
   prevScreen=document.querySelector('.screen.on').id;
   if(G&&!G.over&&G.timer){pauseGame();paused=true}
-  $('opt-angel').value=store.get('angel')||'sometimes';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'metal';$('opt-pal').value=store.get('pal')||'rainbow';$('opt-speed').value=store.get('speed')||'1';$('opt-sfx').value=store.get('clearSfx')||'glass';
+  $('opt-angel').value=store.get('angel')||'sometimes';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'metal';$('opt-pal').value=store.get('pal')||'rainbow';$('opt-speed').value=store.get('speed')||'1.3';$('opt-sfx').value=store.get('clearSfx')||'glass';
   const box=$('slots');box.innerHTML='';
   ROLES.forEach(r=>{
     const d=document.createElement('div');d.className='slot';
