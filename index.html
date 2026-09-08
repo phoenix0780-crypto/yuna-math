@@ -278,7 +278,7 @@ body.webgl .tile.drop{animation:none}
 </div>
 
 <script>
-const VERSION='v2.23 (3D)';document.getElementById('ver').textContent=VERSION;
+const VERSION='v2.24 (3D)';document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
 const store={
@@ -370,16 +370,26 @@ function toggleMute(){muted=!muted;store.set('muted',muted?'1':'0');document.get
 /* ====== 背景音樂（程式生成，柔和五聲音階） ====== */
 const BGM=(()=>{
   let on=false,master,timer,step=0,next=0;
-  const CH=[[261.63,329.63,392.0],[220.0,261.63,329.63],[174.61,220.0,261.63],[196.0,246.94,293.66]]; // C Am F G
-  const PENTA=[523.25,587.33,659.25,783.99,880.0,1046.5,1174.7];
+  // 卡農（Pachelbel, D 大調）：D A Bm F#m G D G A，每和弦 2 秒（4 拍）
+  const N={D3:146.83,E3:164.81,Fs3:185.0,G3:196.0,A3:220.0,B3:246.94,Cs4:277.18,D4:293.66,E4:329.63,Fs4:369.99,G4:392.0,A4:440.0,B4:493.88,Cs5:554.37,D5:587.33,E5:659.25,Fs5:739.99,G5:783.99,A5:880.0};
+  const CH=[[N.D4,N.Fs4,N.A4],[N.A3,N.Cs4,N.E4],[N.B3,N.D4,N.Fs4],[N.Fs3,N.A3,N.Cs4],[N.G3,N.B3,N.D4],[N.D4,N.Fs4,N.A4],[N.G3,N.B3,N.D4],[N.A3,N.Cs4,N.E4]];
+  const BASS=[N.D3,N.A3/2,N.B3/2,N.Fs3/2,N.G3/2,N.D3,N.G3/2,N.A3/2];
+  // 卡農主旋律（第一變奏，每和弦 4 個 8 分音符）
+  const MEL=[[N.Fs5,N.E5,N.D5,N.Cs5],[N.B4,N.A4,N.B4,N.Cs5],[N.D5,N.Cs5,N.B4,N.A4],[N.G4,N.Fs4,N.G4,N.A4],[N.D5,N.Fs5,N.A5,N.G5],[N.Fs5,N.D5,N.Fs5,N.E5],[N.D5,N.B4,N.D5,N.A4],[N.G4,N.B4,N.A4,N.G4]];
+  let melOn=false;
   function ctx(){actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();return actx}
   function want(){return (store.get('bgm')||'on')==='on'&&!muted}
-  function pad(freqs,t,dur){const g=ctx().createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.06,t+1.2);g.gain.setValueAtTime(.06,t+dur-1.2);g.gain.linearRampToValueAtTime(0,t+dur);g.connect(master);
+  function pad(freqs,t,dur){const g=ctx().createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.045,t+.6);g.gain.setValueAtTime(.045,t+dur-.6);g.gain.linearRampToValueAtTime(0,t+dur);g.connect(master);
     freqs.forEach(f=>[0,-6,6].forEach(dt=>{const o=ctx().createOscillator();o.type='triangle';o.frequency.value=f;o.detune.value=dt;o.connect(g);o.start(t);o.stop(t+dur)}))}
-  function pluck(f,t){const g=ctx().createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.09,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+1.4);g.connect(master);
-    const o=ctx().createOscillator();o.type='sine';o.frequency.value=f;o.connect(g);o.start(t);o.stop(t+1.5)}
-  function schedule(){const c=ctx();while(next<c.currentTime+2.5){const bar=Math.floor(step/8)%4;if(step%8===0)pad(CH[bar],next,4.2);
-    if(Math.random()<.7)pluck(PENTA[Math.floor(Math.random()*PENTA.length)],next);
+  function pluck(f,t,dur=1.4,vol=.09){const g=ctx().createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+dur);g.connect(master);
+    const o=ctx().createOscillator();o.type='sine';o.frequency.value=f;o.connect(g);const o2=ctx().createOscillator();o2.type='triangle';o2.frequency.value=f*2;const g2=ctx().createGain();g2.gain.value=.15;o2.connect(g2);g2.connect(g);o.start(t);o.stop(t+dur+.1);o2.start(t);o2.stop(t+dur+.1)}
+  function schedule(){const c=ctx();while(next<c.currentTime+2.5){
+    const bar=Math.floor(step/4)%8,beat=step%4,round=Math.floor(step/32);
+    if(beat===0){pad(CH[bar],next,2.2);pluck(BASS[bar],next,.6,.07)}
+    // 第 1 輪只有和弦與分解，第 2 輪起加入主旋律，每 4 輪休息 1 輪
+    melOn=round%4!==0;
+    if(melOn)pluck(MEL[bar][beat],next,1.2,.08);
+    else if(beat%2===1)pluck(CH[bar][(step>>1)%3]*2,next,.9,.05); // 分解和弦
     next+=.5;step++}}
   function start(){if(on||!want())return;try{const c=ctx();master=c.createGain();master.gain.value=0;master.connect(c.destination);master.gain.linearRampToValueAtTime(.9,c.currentTime+2);next=c.currentTime+.1;step=0;timer=setInterval(schedule,1000);schedule();on=true}catch(e){}}
   function stop(){if(!on)return;clearInterval(timer);try{master.gain.linearRampToValueAtTime(0,ctx().currentTime+1);const m=master;setTimeout(()=>m.disconnect(),1200)}catch(e){}on=false}
