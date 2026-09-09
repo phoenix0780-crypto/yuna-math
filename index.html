@@ -284,7 +284,7 @@ body.webgl .tile.drop{animation:none}
 </div>
 
 <script>
-const VERSION='v2.26 (3D)';document.getElementById('ver').textContent=VERSION;
+const VERSION='v2.27 (3D)';document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
 const store={
@@ -425,7 +425,7 @@ function renderLevels(){
 let G=null;
 function startLevel(i){
   const lv=LEVELS[i];
-  G={i,lv,board:[],sel:null,cleared:0,mpos:0,timer:null,idle:0,lastClear:0,combo:0,hits:0,energy:0,busy:false,over:false,wrong:0,angelCount:0,score:0,start:Date.now()};
+  G={i,lv,cols:lv.cols,rows:lv.rows,board:[],sel:null,cleared:0,mpos:0,timer:null,idle:0,lastClear:0,combo:0,hits:0,energy:0,busy:false,over:false,wrong:0,angelCount:0,score:0,start:Date.now()};
   $('hud-level').textContent=lv.name;$('hud-target').textContent=lv.target;$('hud-cleared').textContent=0;$('hud-combo').textContent='';$('hud-score').textContent=0;
   $('mute').textContent=muted?'🔇 靜音':'🔊 聲音';
   renderFace($('princess-face'),'princess');renderFace($('monster-face'),lv.boss?'boss':'monster');renderFace($('angel-face'),'angel');
@@ -529,7 +529,7 @@ const MATS={
   function rebuild(){
     if(!S.ok||!G)return;S.dirty=false;
     S.meshes.forEach(m=>S.scene.remove(m.grp));S.meshes=[];
-    const g=$('grid'),{cols,rows}=G.lv;
+    const g=$('grid'),{cols,rows}=G;
     for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
       const v=G.board[r][c];if(!v)continue;const el=tileAt(r,c);if(!el)continue;
       const bw=el.offsetWidth,cx=el.offsetLeft+bw/2,cy=el.offsetTop+el.offsetHeight/2,sz=bw*.5;const b={width:bw};
@@ -572,7 +572,7 @@ function rnd(lv){ // 產生 1-9，依權重降低 5
   for(let i=0;i<9;i++){r-=w[i];if(r<0)return i+1}return 9;
 }
 function newBoard(){
-  const {cols,rows}=G.lv;G.board=[];
+  const {cols,rows}=G;G.board=[];
   for(let r=0;r<rows;r++){G.board[r]=[];for(let c=0;c<cols;c++)G.board[r][c]=smartNum(r,c)}
   if(countMoves()===0)shuffle(false);
   const g=$('grid');g.style.gridTemplateColumns=`repeat(${cols},1fr)`;drawBoard();fitGrid();
@@ -589,23 +589,23 @@ function safeNum(r,c){ // 補進的寶石不與上下左右鄰居湊 10
   return rnd(G.lv);
 }
 function drawBoard(){
-  const g=$('grid'),{cols,rows}=G.lv;g.innerHTML='';GL.rebuildSoon();
+  const g=$('grid'),{cols,rows}=G;g.innerHTML='';GL.rebuildSoon();
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
     const v=G.board[r][c],t=document.createElement('button');
     t.className='tile'+(v?' n'+v:' empty');t.textContent=v||'';t.dataset.r=r;t.dataset.c=c;
     g.appendChild(t);
   }
 }
-const tileAt=(r,c)=>$('grid').children[r*G.lv.cols+c];
+const tileAt=(r,c)=>$('grid').children[r*G.cols+c];
 function countMoves(list){
-  const {cols,rows}=G.lv;let n=0;
+  const {cols,rows}=G;let n=0;
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const v=G.board[r][c];if(!v)continue;
     if(c+1<cols&&v+G.board[r][c+1]===10){n++;if(list)list.push([r,c,r,c+1])}
     if(r+1<rows&&v+G.board[r+1][c]===10){n++;if(list)list.push([r,c,r+1,c])}}
   return n;
 }
 function shuffle(notify=true){
-  const {cols,rows}=G.lv;let tries=0;
+  const {cols,rows}=G;let tries=0;
   do{const flat=[];for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(G.board[r][c])flat.push(G.board[r][c]);
     for(let i=flat.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[flat[i],flat[j]]=[flat[j],flat[i]]}
     let k=0;for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(G.board[r][c])G.board[r][c]=flat[k++];
@@ -679,7 +679,7 @@ function eliminate(r1,c1,r2,c2){
   },350);
 }
 function gravity(){
-  const {cols,rows}=G.lv;
+  const {cols,rows}=G;
   for(let c=0;c<cols;c++){
     let w=rows-1;
     for(let r=rows-1;r>=0;r--)if(G.board[r][c]){G.board[w][c]=G.board[r][c];if(w!==r)G.board[r][c]=0;w--}
@@ -793,10 +793,17 @@ function lose(){
   $('overlay').classList.add('on');
 }
 function fitGrid(){
-  if(!G)return;const sc=$('s-game'),g=$('grid'),{cols,rows}=G.lv,gap=4;
+  if(!G)return;const sc=$('s-game'),g=$('grid'),gap=4;
   const tr=sc.querySelector('.track'),hud=sc.querySelector('.hud'),tb=sc.querySelector('.toolbar');
   const vh=window.visualViewport?window.visualViewport.height:window.innerHeight;
   const vw=sc.clientWidth,land=window.innerWidth>window.innerHeight&&vh<600;
+  // 橫向時盤面轉置（寬 > 高），直式轉回
+  if((land&&G.rows>G.cols)||(!land&&G.cols>G.rows)){
+    const nb=[];for(let c=0;c<G.cols;c++){nb[c]=[];for(let r=0;r<G.rows;r++)nb[c][r]=G.board[G.rows-1-r][c]}
+    G.board=nb;[G.cols,G.rows]=[G.rows,G.cols];G.sel=null;$('diff').textContent='';
+    g.style.gridTemplateColumns=`repeat(${G.cols},1fr)`;drawBoard();
+  }
+  const {cols,rows}=G;
   const pad=parseFloat(getComputedStyle(sc).paddingTop)+parseFloat(getComputedStyle(sc).paddingBottom);
   let avail,maxW;
   if(land){ // 橫向：左欄 HUD+賽道+工具列，右欄格子吃滿高度
