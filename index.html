@@ -881,7 +881,7 @@ $('opt-gl').onchange=e=>{store.set('gl',e.target.value);toast('重新整理頁�
 $('opt-pal').onchange=e=>{store.set('pal',e.target.value);GL.restyle()};
 $('opt-speed').onchange=e=>store.set('speed',e.target.value);
 function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1600)}
-function resetProgress(){if(!confirm('確定要清除所有星星和關卡進度嗎？'))return;progress.unlocked=1;progress.stars={};saveProgress();store.del('lastLevel');toast('已重置進度')}
+function resetProgress(){if(!confirm('確定要清除 '+playerName(curPlayer())+' 的星星和關卡進度嗎？（其他人的不受影響）'))return;progress.unlocked=1;progress.stars={};saveProgress();store.del(lastKey());renderLevels();toast('已重置 '+playerName(curPlayer())+' 的進度')}
 function previewSfx(){sfx.shatter();vib(40)}
 
 
