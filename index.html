@@ -286,7 +286,7 @@ body.webgl .tile.drop{animation:none}
 </div>
 
 <script>
-const VERSION='v2.31 (3D)';document.getElementById('ver').textContent=VERSION;
+const VERSION='v2.32 (3D)';document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
 const store={
@@ -437,18 +437,18 @@ function startLevel(i){
   const begin=()=>{say('p',lv.boss?'爸爸大魔王來了！快！':'快幫我湊 10！',1500);countdown(()=>{if(G&&!G.over)G.timer=setInterval(tick,100)})};
   if(!store.get('tutorialDone')){showTutorial(begin)}else begin();
 }
-function countdown(done){let n=3;G.busy=true;const go=()=>{if(!G||G.over)return;if(n===0){G.busy=false;done();return}
+function countdown(done){let n=3;G.busy=true;G.cd=true;const go=()=>{if(!G||G.over)return;if(G.cdPaused){setTimeout(go,200);return}if(n===0){G.busy=false;G.cd=false;done();return}
   const d=document.createElement('div');d.className='count';d.textContent=n;$('s-game').appendChild(d);beep(n===1?880:660,.15);setTimeout(()=>d.remove(),900);n--;setTimeout(go,900)};go()}
 function showTutorial(done){G.busy=true;$('ov-stars').textContent='💎';$('ov-title').textContent='怎麼玩';
   $('ov-text').innerHTML='<div class="tut">1. 點一顆寶石再點<b>旁邊</b>那顆，或直接<b>滑過去</b><br>2. 兩個數字<b>加起來 = 10</b> 就會碎掉<br>3. 每碎一對，暴龍就<b>後退</b><br>4. 暴龍抓到 Yuna 就輸了<br>5. 消滿目標數就過關！</div>';
   $('ov-family').innerHTML='';const b=$('ov-btn');b.textContent='我知道了！';b.onclick=()=>{store.set('tutorialDone','1');$('overlay').classList.remove('on');$('ov-text').textContent='';done()};$('overlay').classList.add('on')}
 function stopGame(){if(G){clearInterval(G.timer);G.over=true;G.timer=null}releaseWake()}
-function pauseGame(){if(!G||G.over||!G.timer)return;clearInterval(G.timer);G.timer=null;$('btn-pause').textContent='▶ 繼續'}
-function resumeGame(){if(!G||G.over||G.timer)return;G.timer=setInterval(tick,100);$('btn-pause').textContent='⏸ 暫停'}
-function togglePause(){if(!G||G.over)return;if(G.timer){pauseGame();$('ov-stars').textContent='⏸';$('ov-title').textContent='暫停中';$('ov-text').textContent='怪獸也在休息';$('ov-family').innerHTML='';const b=$('ov-btn');b.textContent='▶ 繼續';b.onclick=()=>{$('overlay').classList.remove('on');resumeGame()};$('overlay').classList.add('on')}}
+function pauseGame(){if(!G||G.over)return;if(G.cd){G.cdPaused=true}if(G.timer){clearInterval(G.timer);G.timer=null}$('btn-pause').textContent='▶ 繼續'}
+function resumeGame(){if(!G||G.over)return;if(G.cd){G.cdPaused=false}else if(!G.timer)G.timer=setInterval(tick,100);$('btn-pause').textContent='⏸ 暫停'}
+function togglePause(){if(!G||G.over)return;if(G.timer||(G.cd&&!G.cdPaused)){pauseGame();$('ov-stars').textContent='⏸';$('ov-title').textContent='暫停中';$('ov-text').textContent='怪獸也在休息';$('ov-family').innerHTML='';const b=$('ov-btn');b.textContent='▶ 繼續';b.onclick=()=>{$('overlay').classList.remove('on');resumeGame()};$('overlay').classList.add('on')}}
 function confirmHome(){if(!G||G.over){goTitle();return}pauseGame();$('ov-stars').textContent='';$('ov-title').textContent='要回首頁嗎？';$('ov-text').textContent='這一關的進度會不見';$('ov-family').innerHTML='';const b=$('ov-btn');b.textContent='繼續玩';b.onclick=()=>{$('overlay').classList.remove('on');resumeGame()};$('overlay').classList.add('on')}
 /* 切到背景自動暫停 */
-document.addEventListener('visibilitychange',()=>{if(document.hidden){BGM.stop();if(G&&!G.over&&G.timer)togglePause()}else BGM.update()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){BGM.stop();if(G&&!G.over&&(G.timer||G.cd))togglePause()}else BGM.update()});
 /* 螢幕常亮 */
 let wake=null;async function requestWake(){try{wake=await navigator.wakeLock.request('screen')}catch(e){}}function releaseWake(){try{wake&&wake.release();wake=null}catch(e){}}
 /* iOS 靜音開關(震動模式)會讓 Web Audio 無聲：用循環播放的靜音 <audio> 把音訊切到「播放」類別即可解除 */
@@ -470,11 +470,11 @@ const GL=(()=>{
 let COLORS={};function applyPalette(){const p=PALETTES[store.get('pal')]||PALETTES.rainbow;COLORS={};p.forEach((h,i)=>{COLORS[i+1]=parseInt(h,16);document.documentElement.style.setProperty('--c'+(i+1),'#'+h)})}
 applyPalette();
 const MATS={
-  candy:  {metalness:0,roughness:.04,clearcoat:1,clearcoatRoughness:.02,reflectivity:1,env:1.4,opacity:1,emissive:.12,flat:true,glow:.4,core:.12},
-  cut:    {metalness:.1,roughness:.06,clearcoat:1,clearcoatRoughness:.04,reflectivity:1,env:1.5,opacity:.9,emissive:.22,flat:true,glow:.4,core:.12},
+  candy:  {metalness:0,roughness:.05,clearcoat:1,clearcoatRoughness:.03,reflectivity:1,env:1.0,opacity:1,emissive:.12,flat:true,glow:.4,core:.12},
+  cut:    {metalness:.1,roughness:.08,clearcoat:1,clearcoatRoughness:.05,reflectivity:1,env:1.0,opacity:.9,emissive:.22,flat:true,glow:.4,core:.12},
   jelly:  {metalness:0,roughness:.15,clearcoat:.6,clearcoatRoughness:.2,reflectivity:.5,env:.4,opacity:.72,emissive:.35,flat:true,glow:.45,core:.25},
   matte:  {metalness:0,roughness:.65,clearcoat:0,clearcoatRoughness:1,reflectivity:.3,env:.15,opacity:1,emissive:.05,flat:true,glow:.15,core:0},
-  metal:  {metalness:1,roughness:.05,clearcoat:1,clearcoatRoughness:.03,reflectivity:1,env:2.2,opacity:1,emissive:0,flat:true,glow:.25,core:0},
+  metal:  {metalness:1,roughness:.1,clearcoat:.8,clearcoatRoughness:.05,reflectivity:1,env:1.5,opacity:1,emissive:.05,flat:true,glow:.3,core:.1},
   crystal:{metalness:0,roughness:.05,clearcoat:1,clearcoatRoughness:.05,reflectivity:1,env:.8,opacity:.85,emissive:.6,flat:true,glow:.7,core:.35},
   energymetal:{metalness:.85,roughness:.18,clearcoat:.5,clearcoatRoughness:.1,reflectivity:1,env:1.2,opacity:1,emissive:.45,flat:true,glow:.6,core:.3}
 };
@@ -485,10 +485,10 @@ const MATS={
       S.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
       S.scene=new THREE.Scene();
       S.cam=new THREE.OrthographicCamera(0,1,0,-1,-500,500);S.cam.position.z=100;
-      S.scene.add(new THREE.AmbientLight(0xffffff,.06));
-      const d=new THREE.DirectionalLight(0xffffff,2.6);d.position.set(-1,1.6,1.4);S.scene.add(d);
-      const rim=new THREE.DirectionalLight(0x8fb4ff,.8);rim.position.set(1.3,-.9,.6);S.scene.add(rim);
-      const fill=new THREE.DirectionalLight(0xffe0b0,.3);fill.position.set(.6,.2,-1);S.scene.add(fill);
+      S.scene.add(new THREE.AmbientLight(0xffffff,.22));
+      const d=new THREE.DirectionalLight(0xffffff,1.8);d.position.set(-1,1.5,1.5);S.scene.add(d);
+      const rim=new THREE.DirectionalLight(0x9fc0ff,.9);rim.position.set(1.3,-.9,.7);S.scene.add(rim);
+      const fill=new THREE.DirectionalLight(0xffe0b0,.35);fill.position.set(.6,.2,-1);S.scene.add(fill);
       const p=new THREE.PointLight(0xfff0c0,.6,0);p.position.set(200,-100,220);S.scene.add(p);S.light=p;
       // 9 種寶石切割外形（2D 輪廓 → 桌面／冠部／亭部），奇偶切面一律連續
       const outline=(kind)=>{const P=[];const push=(x,y)=>P.push([x,y]);const N=32;
@@ -510,7 +510,9 @@ const MATS={
       S.geos={};for(const n in SPEC){const [k,h,tb,pav]=SPEC[n];const cg=gemGeo(k,h,tb,pav);S.geos[n]={crown:cg,pv:new THREE.BufferGeometry(),edges:new THREE.EdgesGeometry(cg,12)}}
       // 環境貼圖（漸層天空盒）讓切面有反光
       const mk=(c1,c2)=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');const g=x.createLinearGradient(0,0,0,64);g.addColorStop(0,c1);g.addColorStop(1,c2);x.fillStyle=g;x.fillRect(0,0,64,64);
-        x.fillStyle='#000';x.fillRect(0,0,64,64);x.fillStyle='#fff';x.fillRect(0,4,64,10);x.fillStyle='#777';x.fillRect(0,20,64,6);x.fillStyle='#fff';x.fillRect(0,36,64,4);x.fillStyle='#222';x.fillRect(0,48,64,16);return c};
+        // 環形光：中灰底、上方寬亮帶、中段細亮帶、下方暗（參考商業寶石渲染的 ring light 設定）
+        const g2=x.createLinearGradient(0,0,0,64);g2.addColorStop(0,'#9aa0b8');g2.addColorStop(.5,'#3a3550');g2.addColorStop(1,'#0a0814');x.fillStyle=g2;x.fillRect(0,0,64,64);
+        x.fillStyle='rgba(255,255,255,.95)';x.fillRect(0,6,64,9);x.fillStyle='rgba(255,255,255,.55)';x.fillRect(0,30,64,3);x.fillStyle='rgba(255,240,200,.5)';x.fillRect(0,44,64,2);return c};
       const env=new THREE.CubeTexture([mk(),mk(),mk(),mk(),mk(),mk()]);env.needsUpdate=true;S.env=env;
       // 光暈貼圖
       const cv=document.createElement('canvas');cv.width=cv.height=128;const x=cv.getContext('2d');
@@ -529,6 +531,7 @@ const MATS={
       S.mats[n]=new THREE.MeshPhysicalMaterial({color:COLORS[n],metalness:M.metalness,roughness:M.roughness,clearcoat:M.clearcoat,clearcoatRoughness:M.clearcoatRoughness,reflectivity:M.reflectivity,envMap:S.env,envMapIntensity:M.env,transparent:M.opacity<1,opacity:M.opacity,emissive:COLORS[n],emissiveIntensity:M.emissive,flatShading:M.flat});
       S.mats['g'+n]=new THREE.SpriteMaterial({map:S.glowTex,color:COLORS[n],transparent:true,opacity:M.glow,blending:THREE.AdditiveBlending,depthWrite:false});
       S.mats['c'+n]=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:M.core,blending:THREE.AdditiveBlending,depthWrite:false});
+      S.mats['e'+n]=new THREE.MeshBasicMaterial({color:new THREE.Color(COLORS[n]).multiplyScalar(.3),side:THREE.BackSide});
     }
   }
   function restyle(){applyPalette();if(S.ok){buildMats();S.dirty=true}}
@@ -550,7 +553,7 @@ const MATS={
       const bw=el.offsetWidth,cx=el.offsetLeft+bw/2,cy=el.offsetTop+el.offsetHeight/2,sz=bw*.5;const b={width:bw};
       const grp=new THREE.Group();grp.position.set(cx,-cy,0);
       const glow=new THREE.Sprite(S.mats['g'+v]);glow.scale.set(b.width*1.4,b.width*1.4,1);glow.position.z=-5;grp.add(glow);
-      const m=new THREE.Group();m.add(new THREE.Mesh(S.geos[v].crown,S.mats[v]));
+      const m=new THREE.Group();m.add(new THREE.Mesh(S.geos[v].crown,S.mats[v]));const rimM=new THREE.Mesh(S.geos[v].crown,S.mats['e'+v]);rimM.scale.setScalar(1.07);m.add(rimM);
       m.scale.setScalar(sz*.95);m.rotation.set(.7,0,0);grp.add(m);
       const core=new THREE.Group();core.add(new THREE.Mesh(S.geos[v].crown,S.mats['c'+v]));core.add(new THREE.Mesh(S.geos[v].pv,S.mats['c'+v]));core.scale.setScalar(sz*.45);core.rotation.copy(m.rotation);grp.add(core);
       const sp=new THREE.Sprite(S.mats.spark);sp.scale.set(0,0,1);sp.position.set(sz*.5,sz*.5,20);grp.add(sp);
@@ -844,7 +847,7 @@ function settle(){refit();requestAnimationFrame(()=>{refit();setTimeout(refit,12
 let picking=null,prevScreen='s-title',paused=false;
 function showSettings(){
   prevScreen=document.querySelector('.screen.on').id;
-  if(G&&!G.over&&G.timer){pauseGame();paused=true}
+  if(G&&!G.over&&(G.timer||G.cd)){pauseGame();paused=true}
   $('opt-angel').value=store.get('angel')||'sometimes';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'metal';$('opt-pal').value=store.get('pal')||'rainbow';$('opt-speed').value=store.get('speed')||'1.3';$('opt-sfx').value=store.get('clearSfx')||'magic';$('opt-bgm').value=store.get('bgm')||'on';
   const box=$('slots');box.innerHTML='';
   ROLES.forEach(r=>{
