@@ -284,7 +284,7 @@ body.webgl .tile.drop{animation:none}
 </div>
 
 <script>
-const VERSION='v2.40 (3D)';
+const VERSION='v2.41 (3D)';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -315,14 +315,15 @@ function curPlayer(){return store.get('player')||'princess'}
 function renderPlayers(){const b=$('players');b.innerHTML='';PLAYERS.forEach(p=>{const on=curPlayer()===p.id;const d=document.createElement('button');d.className='pl'+(on?' on':'');
   d.innerHTML=`<div class="face">${faceHTML(p.id)}</div>${playerName(p.id)}${p.id==='guest'?'<small style="opacity:.7;font-weight:500">✏️ 改名字</small>':''}`;
   d.onclick=()=>{if(p.id==='guest'&&on){const n=prompt('你叫什麼名字？',store.get('guestName')||'');if(n!==null){const t=n.trim().slice(0,8);t?store.set('guestName',t):store.del('guestName')}}store.set('player',p.id);loadProgress();renderPlayers();renderLevels()};b.appendChild(d)})}
+function stamp(){const d=new Date();const p=n=>String(n).padStart(2,'0');return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`}
 function getBoard(){try{return JSON.parse(store.get('board')||'[]')}catch(e){return []}}
 function addScore(entry){const b=getBoard();b.push(entry);b.sort((x,y)=>y.score-x.score);store.set('board',JSON.stringify(b.slice(0,50)));return b.findIndex(e=>e===entry)+1}
 function showBoard(){const sel=$('lb-level');if(sel.options.length===1)LEVELS.forEach((lv,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=lv.name;sel.appendChild(o)});renderBoard();show('s-board')}
 function renderBoard(){const f=$('lb-level').value,box=$('lb');let b=getBoard();if(f!=='all')b=b.filter(e=>e.level==f);b=b.slice(0,10);
-  box.innerHTML='<div class="row head"><span>#</span><span></span><span>玩家 / 關卡</span><span>星星</span><span class="sc">分數</span></div>';
+  box.innerHTML='<div class="row head"><span>#</span><span></span><span>玩家 / 關卡 / 時間</span><span>結果</span><span class="sc">分數</span></div>';
   if(!b.length){box.innerHTML+='<div class="emp">還沒有紀錄，去打敗暴龍吧！</div>';return}
   b.forEach((e,i)=>{const p=PLAYERS.find(x=>x.id===e.player)||PLAYERS[0];const me=e.player===curPlayer();const nm=e.player==='guest'?(e.name||playerName('guest')):p.name;
-    box.innerHTML+=`<div class="row${me?' me':''}"><span class="rk">${i+1}</span><div class="face">${faceHTML(p.id)}</div><span>${nm}<br><small style="opacity:.7">${LEVELS[e.level-1].name} · ${e.date}</small></span><span style="color:#ffd166">${'★'.repeat(e.stars)}</span><span class="sc">${e.score}</span></div>`})}
+    box.innerHTML+=`<div class="row${me?' me':''}"><span class="rk">${i+1}</span><div class="face">${faceHTML(p.id)}</div><span>${nm}<br><small style="opacity:.7">${LEVELS[e.level-1].name} · ${e.date}</small></span><span style="color:#ffd166;font-size:13px">${e.result==='win'||!e.result?('★'.repeat(e.stars)||'過關'):(e.result==='lose'?'😱 被抓':'🚪 中離')}</span><span class="sc">${e.score}</span></div>`})}
 function clearBoard(){if(!confirm('確定清除所有排行榜紀錄？'))return;store.del('board');renderBoard();toast('已清除')}
 /* ====== 關卡 ====== */
 /* stepMs: 怪獸每走 1 格的毫秒; path: 路長; target: 要消幾對; hint: 顯示「還差?」; penalty: 配錯怪獸前進; five: 出 5 的權重(1=正常) */
@@ -416,7 +417,7 @@ const BGM=(()=>{
 /* ====== 畫面切換 ====== */
 const $=id=>document.getElementById(id);
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');$('gear').classList.toggle('hide',id!=='s-title')}
-function goTitle(){stopGame();document.body.classList.remove('danger');loadProgress();renderLevels();renderPlayers();show('s-title')}
+function goTitle(){if(G&&!G.over)recordRun('quit');stopGame();document.body.classList.remove('danger');loadProgress();renderLevels();renderPlayers();show('s-title')}
 function renderLevels(){
   const last=+store.get(lastKey());const bc=$('btn-continue');if(store.get(lastKey())!==null&&last>=0){bc.style.display='';bc.textContent=`▶ 繼續 ${LEVELS[last].name}`}else bc.style.display='none';
   const box=$('levels');box.innerHTML='';
@@ -812,7 +813,7 @@ function win(){
   stopGame();sfx.win();document.body.classList.remove('danger');
   const n=G.i+1,stars=G.wrong===0?3:G.wrong<=3?2:1;
   const secs=Math.round((Date.now()-G.start)/1000),bonus=Math.max(0,180-secs)*2+stars*50+(G.lv.boss?200:0);addPts(bonus);
-  const rank=addScore({player:curPlayer(),name:playerName(curPlayer()),level:n,score:G.score,stars,date:new Date().toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'})});
+  G.recorded=true;const rank=addScore({player:curPlayer(),name:playerName(curPlayer()),level:n,score:G.score,stars,date:stamp(),result:'win'});
   progress.stars[n]=Math.max(progress.stars[n]||0,stars);
   if(n>=progress.unlocked&&n<LEVELS.length)progress.unlocked=n+1;saveProgress();store.set(lastKey(),Math.min(n,LEVELS.length-1));
   $('ov-stars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);
@@ -823,8 +824,10 @@ function win(){
   if(n<LEVELS.length){b.textContent='下一關 ▶';b.onclick=()=>startLevel(n)}else{b.textContent='再玩一次';b.onclick=()=>startLevel(G.i)}
   $('overlay').classList.add('on');
 }
+function recordRun(result){if(!G||G.recorded||G.cleared===0)return;G.recorded=true;
+  addScore({player:curPlayer(),name:playerName(curPlayer()),level:G.i+1,score:G.score,stars:0,date:stamp(),result});}
 function lose(){
-  stopGame();sfx.lose();document.body.classList.remove('danger');
+  recordRun('lose');stopGame();sfx.lose();document.body.classList.remove('danger');
   $('ov-stars').textContent='';$('ov-title').textContent='公主被抓走了！';
   $('ov-text').textContent='「再來一次！」— 天使遞給你重玩鍵';
   $('ov-family').innerHTML=`<div class="face">${faceHTML(G.lv.boss?'boss':'monster')}</div><div class="face" style="transform:rotate(-20deg)">${faceHTML('princess')}</div>`;
