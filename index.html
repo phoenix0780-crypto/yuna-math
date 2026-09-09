@@ -16,7 +16,7 @@
   --gem:#888;
   --sky:#2b1b4e; --sky2:#4a2d7a; --gold:#ffd166; --cream:#fff5e1; --ink:#2a1a3c;
   --red:#ff5c7a; --green:#7be495; --blue:#6fc3ff; --danger:#ff2d55;
-  --c1:#ff2d3a; --c2:#ff8a00; --c3:#ffe600; --c4:#2ecc40; --c5:#1e90ff; --c6:#5b3cff; --c7:#b100e8; --c8:#00e0d0; --c9:#ffffff;
+  --c1:#ff1f1f; --c2:#ff8c00; --c3:#ffe800; --c4:#00d420; --c5:#00e5ff; --c6:#1550ff; --c7:#a020f0; --c8:#ff35c0; --c9:#ffffff;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
 html,body{margin:0;height:100%;background:var(--sky);color:var(--cream);font-family:"Fredoka","Noto Sans TC",system-ui,sans-serif;overflow:hidden;overscroll-behavior:none;position:fixed;width:100%}
@@ -284,7 +284,7 @@ body.webgl .tile.drop{animation:none}
 </div>
 
 <script>
-const VERSION='v2.41 (3D)';
+const VERSION='v2.42 (3D)';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -469,12 +469,12 @@ document.addEventListener('pointerdown',()=>{iosUnmute();try{actx=actx||new (win
 const GL=(()=>{
   const S={ok:false,meshes:[],geos:{},mats:{},t:0,dirty:false,raf:null};
   const PALETTES={
-  candy:  ['ff5a6e','ffa04d','ffe066','5fdc8a','5aa0ff','b57cff','ff7ac8','5ee6ec','f4f8ff'],
-  rainbow:['ff2d3a','ff8a00','ffe600','2ecc40','1e90ff','5b3cff','b100e8','00e0d0','ffffff'],
-  morandi:['b5686a','d3a684','c9b36c','8fa58b','8fa4b8','a394ad','c797a0','8fb0b0','e6e2d8'],
-  gemstone:['d0103a','ff9500','ffd700','0b8a3c','0f3fb8','7b2cbf','ffb3d1','40c4d6','e8f6ff'],
-  macaron:['ffb3bd','ffcf9e','fff1a8','b9f0c8','b3d4ff','d8c2ff','ffc2e2','b8f4f7','fffdf5'],
-  princess:['ff5c9a','ff8ac5','ffb6dc','f7c6ff','d9a6ff','b47fff','c9b1ff','ffd4f0','fff5fb']
+  candy:   ['ff5a5a','ffa64d','ffe066','5fdc6a','5ee6ec','5a8cff','b57cff','ff7ac8','fff8e7'],
+  rainbow: ['ff1f1f','ff8c00','ffe800','00d420','00e5ff','1550ff','a020f0','ff35c0','ffffff'],
+  morandi: ['b5686a','d3a684','c9b36c','7fa87f','7fb0b8','7d8fc4','a394ad','c797a0','ece8de'],
+  gemstone: ['d0103a','ff8c00','ffd700','0b8a3c','00b8c4','0f3fb8','7b2cbf','ff4fa3','f2faff'],
+  macaron: ['ff9aa2','ffcf9e','fff3a8','a8e6a3','a8ecef','aac8ff','d8b3ff','ffb3e0','fffdf5'],
+  princess: ['ff3d7a','ff8ac5','ffd166','b6f0c8','8ee8f0','9aa6ff','b47fff','ff5cc0','fff5fb']
 };
 let COLORS={};function applyPalette(){const p=PALETTES[store.get('pal')]||PALETTES.rainbow;COLORS={};p.forEach((h,i)=>{COLORS[i+1]=parseInt(h,16);document.documentElement.style.setProperty('--c'+(i+1),'#'+h)})}
 applyPalette();
