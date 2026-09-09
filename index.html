@@ -37,11 +37,11 @@ button{font-family:inherit;border:0;cursor:pointer}
 .screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto;overflow:hidden}
 .screen.on{display:flex}
 #s-title,#s-settings,#s-board{overflow-y:auto;justify-content:flex-start}
-#s-game.on{display:grid;grid-template-areas:"hud" "track" "grid" "tool";grid-template-rows:auto auto 1fr auto;justify-items:center;align-content:stretch;gap:2px}
+#s-game.on{display:grid;grid-template-areas:"hud" "track" "grid" "diff" "tool";grid-template-rows:auto auto 1fr auto auto;justify-items:center;align-content:stretch;gap:2px}
 #s-game .gridwrap{align-self:start}
 #s-game .hud{grid-area:hud}#s-game .track{grid-area:track}#s-game .gridwrap{grid-area:grid}#s-game .toolbar{grid-area:tool}
 @media (orientation:landscape) and (max-height:600px){
-  #s-game.on{grid-template-areas:"hud grid" "track grid" "tool grid";grid-template-columns:38% 1fr;grid-template-rows:auto auto auto;align-content:center;column-gap:10px;max-width:none;padding-left:calc(12px + env(safe-area-inset-left));padding-right:calc(12px + env(safe-area-inset-right))}
+  #s-game.on{grid-template-areas:"hud grid" "track grid" "diff grid" "tool grid";grid-template-columns:38% 1fr;grid-template-rows:auto auto auto auto;align-content:center;column-gap:10px;max-width:none;padding-left:calc(12px + env(safe-area-inset-left));padding-right:calc(12px + env(safe-area-inset-right))}
   #s-game .hud{font-size:14px;flex-wrap:wrap;gap:4px}
   #s-game .toolbar{margin-top:6px}#s-game .toolbar button{font-size:13px;padding:6px 10px}
   #s-game .gridwrap{align-self:center}
@@ -89,7 +89,7 @@ h1{font-size:44px;margin:24px 0 4px;color:var(--gold);text-shadow:0 4px 0 #a86f0
 .boss .face{width:calc(var(--as) * 1.15);height:calc(var(--as) * 1.15)}
 body.danger .road{animation:pulse .6s infinite alternate}
 @keyframes pulse{to{filter:brightness(1.5)}}
-.diff{position:absolute;left:0;right:0;bottom:calc(var(--as) * .55);text-align:center;font-size:clamp(20px,5.5vw,30px);color:var(--gold);font-weight:900;z-index:4;pointer-events:none;text-shadow:0 0 10px #000,0 3px 0 #000,0 0 20px #000;letter-spacing:1px}
+.diff{grid-area:diff;width:100%;text-align:center;font-size:clamp(20px,5.5vw,30px);line-height:1.2;min-height:1.2em;color:var(--gold);font-weight:900;pointer-events:none;text-shadow:0 0 10px #000,0 3px 0 #000;letter-spacing:1px;align-self:end}
 .gridwrap{position:relative;margin:0 auto;width:100%}
 #gl{position:absolute;left:0;top:0;pointer-events:none;display:none}
 body.webgl #gl{display:block}
@@ -225,12 +225,12 @@ body.webgl .tile.drop{animation:none}
   </div>
   <div class="track">
     <div class="road"></div>
-    <div class="diff" id="diff"></div>
     <div class="castle">🏰</div>
     <div class="actor monster" id="monster"><div class="bubble" id="m-bubble"></div><div class="crown" id="m-crown" style="display:none">👑</div><div class="spikes"></div><div class="face" id="monster-face"></div><div class="tag" id="monster-tag"></div></div>
     <div class="actor princess" id="princess"><div class="bubble" id="p-bubble"></div><div class="crown">👑</div><div class="face" id="princess-face"></div><div class="tag">Yuna</div></div>
   </div>
   <div class="gridwrap" id="gridwrap"><canvas id="gl"></canvas><div class="grid" id="grid"></div></div>
+  <div class="diff" id="diff"></div>
   <div class="toolbar">
     <button onclick="showSettings()">⚙️ 設定</button>
     <button onclick="togglePause()" id="btn-pause">⏸ 暫停</button>
@@ -286,7 +286,7 @@ body.webgl .tile.drop{animation:none}
 </div>
 
 <script>
-const VERSION='v2.30 (3D)';document.getElementById('ver').textContent=VERSION;
+const VERSION='v2.31 (3D)';document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
 const store={
@@ -470,11 +470,11 @@ const GL=(()=>{
 let COLORS={};function applyPalette(){const p=PALETTES[store.get('pal')]||PALETTES.rainbow;COLORS={};p.forEach((h,i)=>{COLORS[i+1]=parseInt(h,16);document.documentElement.style.setProperty('--c'+(i+1),'#'+h)})}
 applyPalette();
 const MATS={
-  candy:  {metalness:0,roughness:.06,clearcoat:1,clearcoatRoughness:.03,reflectivity:1,env:.9,opacity:1,emissive:.12,flat:true,glow:.4,core:.12},
-  cut:    {metalness:.1,roughness:.12,clearcoat:1,clearcoatRoughness:.08,reflectivity:.8,env:.6,opacity:.9,emissive:.22,flat:true,glow:.4,core:.12},
+  candy:  {metalness:0,roughness:.04,clearcoat:1,clearcoatRoughness:.02,reflectivity:1,env:1.4,opacity:1,emissive:.12,flat:true,glow:.4,core:.12},
+  cut:    {metalness:.1,roughness:.06,clearcoat:1,clearcoatRoughness:.04,reflectivity:1,env:1.5,opacity:.9,emissive:.22,flat:true,glow:.4,core:.12},
   jelly:  {metalness:0,roughness:.15,clearcoat:.6,clearcoatRoughness:.2,reflectivity:.5,env:.4,opacity:.72,emissive:.35,flat:true,glow:.45,core:.25},
   matte:  {metalness:0,roughness:.65,clearcoat:0,clearcoatRoughness:1,reflectivity:.3,env:.15,opacity:1,emissive:.05,flat:true,glow:.15,core:0},
-  metal:  {metalness:1,roughness:.12,clearcoat:.6,clearcoatRoughness:.08,reflectivity:1,env:1.6,opacity:1,emissive:0,flat:true,glow:.25,core:0},
+  metal:  {metalness:1,roughness:.05,clearcoat:1,clearcoatRoughness:.03,reflectivity:1,env:2.2,opacity:1,emissive:0,flat:true,glow:.25,core:0},
   crystal:{metalness:0,roughness:.05,clearcoat:1,clearcoatRoughness:.05,reflectivity:1,env:.8,opacity:.85,emissive:.6,flat:true,glow:.7,core:.35},
   energymetal:{metalness:.85,roughness:.18,clearcoat:.5,clearcoatRoughness:.1,reflectivity:1,env:1.2,opacity:1,emissive:.45,flat:true,glow:.6,core:.3}
 };
@@ -485,11 +485,10 @@ const MATS={
       S.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
       S.scene=new THREE.Scene();
       S.cam=new THREE.OrthographicCamera(0,1,0,-1,-500,500);S.cam.position.z=100;
-      S.scene.add(new THREE.AmbientLight(0xffffff,.1));
-      S.edgeMat=new THREE.LineBasicMaterial({color:0x000000,transparent:true,opacity:.45});
-      const d=new THREE.DirectionalLight(0xffffff,2.0);d.position.set(-1,1.4,1.6);S.scene.add(d);
-      const rim=new THREE.DirectionalLight(0x8fb4ff,1.0);rim.position.set(1.2,-.8,.8);S.scene.add(rim);
-      const fill=new THREE.DirectionalLight(0xffe0b0,.5);fill.position.set(.6,.2,-1);S.scene.add(fill);
+      S.scene.add(new THREE.AmbientLight(0xffffff,.06));
+      const d=new THREE.DirectionalLight(0xffffff,2.6);d.position.set(-1,1.6,1.4);S.scene.add(d);
+      const rim=new THREE.DirectionalLight(0x8fb4ff,.8);rim.position.set(1.3,-.9,.6);S.scene.add(rim);
+      const fill=new THREE.DirectionalLight(0xffe0b0,.3);fill.position.set(.6,.2,-1);S.scene.add(fill);
       const p=new THREE.PointLight(0xfff0c0,.6,0);p.position.set(200,-100,220);S.scene.add(p);S.light=p;
       // 9 種寶石切割外形（2D 輪廓 → 桌面／冠部／亭部），奇偶切面一律連續
       const outline=(kind)=>{const P=[];const push=(x,y)=>P.push([x,y]);const N=32;
@@ -511,8 +510,8 @@ const MATS={
       S.geos={};for(const n in SPEC){const [k,h,tb,pav]=SPEC[n];const cg=gemGeo(k,h,tb,pav);S.geos[n]={crown:cg,pv:new THREE.BufferGeometry(),edges:new THREE.EdgesGeometry(cg,12)}}
       // 環境貼圖（漸層天空盒）讓切面有反光
       const mk=(c1,c2)=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');const g=x.createLinearGradient(0,0,0,64);g.addColorStop(0,c1);g.addColorStop(1,c2);x.fillStyle=g;x.fillRect(0,0,64,64);
-        x.fillStyle='rgba(255,255,255,.95)';x.fillRect(0,6,64,8);x.fillStyle='rgba(0,0,0,.6)';x.fillRect(0,22,64,10);x.fillStyle='rgba(255,255,255,.6)';x.fillRect(0,40,64,5);return c};
-      const env=new THREE.CubeTexture([mk('#ffffff','#5a4a8a'),mk('#cfd8ff','#3a2a6a'),mk('#ffffff','#e0e6ff'),mk('#3a2a6a','#0a0820'),mk('#ffffff','#5a4a8a'),mk('#cfd8ff','#3a2a6a')]);env.needsUpdate=true;S.env=env;
+        x.fillStyle='#000';x.fillRect(0,0,64,64);x.fillStyle='#fff';x.fillRect(0,4,64,10);x.fillStyle='#777';x.fillRect(0,20,64,6);x.fillStyle='#fff';x.fillRect(0,36,64,4);x.fillStyle='#222';x.fillRect(0,48,64,16);return c};
+      const env=new THREE.CubeTexture([mk(),mk(),mk(),mk(),mk(),mk()]);env.needsUpdate=true;S.env=env;
       // 光暈貼圖
       const cv=document.createElement('canvas');cv.width=cv.height=128;const x=cv.getContext('2d');
       const gr=x.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,255,255,.9)');gr.addColorStop(.35,'rgba(255,255,255,.35)');gr.addColorStop(1,'rgba(255,255,255,0)');
@@ -551,7 +550,7 @@ const MATS={
       const bw=el.offsetWidth,cx=el.offsetLeft+bw/2,cy=el.offsetTop+el.offsetHeight/2,sz=bw*.5;const b={width:bw};
       const grp=new THREE.Group();grp.position.set(cx,-cy,0);
       const glow=new THREE.Sprite(S.mats['g'+v]);glow.scale.set(b.width*1.4,b.width*1.4,1);glow.position.z=-5;grp.add(glow);
-      const m=new THREE.Group();m.add(new THREE.Mesh(S.geos[v].crown,S.mats[v]));m.add(new THREE.LineSegments(S.geos[v].edges,S.edgeMat));
+      const m=new THREE.Group();m.add(new THREE.Mesh(S.geos[v].crown,S.mats[v]));
       m.scale.setScalar(sz*.95);m.rotation.set(.7,0,0);grp.add(m);
       const core=new THREE.Group();core.add(new THREE.Mesh(S.geos[v].crown,S.mats['c'+v]));core.add(new THREE.Mesh(S.geos[v].pv,S.mats['c'+v]));core.scale.setScalar(sz*.45);core.rotation.copy(m.rotation);grp.add(core);
       const sp=new THREE.Sprite(S.mats.spark);sp.scale.set(0,0,1);sp.position.set(sz*.5,sz*.5,20);grp.add(sp);
@@ -827,7 +826,7 @@ function fitGrid(){
     avail=vh-pad-8;maxW=vw-leftW-34;
   }else{
     const as=Math.max(40,Math.min(vw/8,vh*.08,92));tr.style.setProperty('--as',as+'px');
-    const trackH=as*1.75+2;avail=vh-pad-hud.offsetHeight-trackH-tb.offsetHeight-40;maxW=Math.min(vw-24,600);
+    const trackH=as*1.75+2;avail=vh-pad-hud.offsetHeight-trackH-tb.offsetHeight-$('diff').offsetHeight-24;maxW=Math.min(vw-24,600);
   }
   const tileByH=(avail-gap*(rows-1))/rows,tileByW=(maxW-gap*(cols-1))/cols;
   const t=Math.max(24,Math.min(tileByH,tileByW));
