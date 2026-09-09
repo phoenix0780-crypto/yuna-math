@@ -268,6 +268,7 @@ body.webgl .tile.drop{animation:none}
   <div class="opts">
     <label>背景音樂 <select id="opt-bgm"><option value="on">開</option><option value="off">關</option></select></label>
     <div class="opt">消除音效 <span><select id="opt-sfx"><option value="glass">玻璃碎裂</option><option value="crystal">水晶叮</option><option value="bubble">泡泡啵</option><option value="boom">爆炸砰</option><option value="bell">鈴鐺</option><option value="laser">雷射</option><option value="magic">魔法</option><option value="coin">金幣</option><option value="drum">鼓聲</option><option value="drop">水滴</option><option value="none">不要音效</option></select> <button class="ghost" style="margin:0;padding:4px 10px;font-size:14px" onclick="previewSfx()">試聽</button></span></div>
+    <label>3D 寶石（關閉較省電） <select id="opt-gl"><option value="on">開</option><option value="off">關</option></select></label>
     <label>寶石材質 <select id="opt-mat"><option value="candy">亮面糖果</option><option value="cut">切割寶石</option><option value="jelly">果凍</option><option value="matte">霧面陶瓷</option><option value="metal">金屬</option><option value="crystal">能量水晶</option><option value="energymetal">能量金屬</option></select></label>
     <label>寶石配色 <select id="opt-pal"><option value="candy">糖果</option><option value="rainbow">彩虹純色</option><option value="morandi">莫蘭迪</option><option value="gemstone">寶石名</option><option value="macaron">馬卡龍</option><option value="princess">公主粉紅</option></select></label>
     <label>消除時畫面震動 <select id="opt-shake"><option value="off">關</option><option value="1">輕</option><option value="2">中</option><option value="3">強</option></select></label>
@@ -286,7 +287,8 @@ body.webgl .tile.drop{animation:none}
 </div>
 
 <script>
-const VERSION='v2.32 (3D)';document.getElementById('ver').textContent=VERSION;
+const VERSION='v2.33 (3D)';
+const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
 const store={
@@ -479,10 +481,11 @@ const MATS={
   energymetal:{metalness:.85,roughness:.18,clearcoat:.5,clearcoatRoughness:.1,reflectivity:1,env:1.2,opacity:1,emissive:.45,flat:true,glow:.6,core:.3}
 };
   function init(){
-    if(S.ok||typeof THREE==='undefined')return;
+    if(S.ok||typeof THREE==='undefined'||CRASHED||store.get('gl')==='off')return;
     try{
-      S.renderer=new THREE.WebGLRenderer({canvas:$('gl'),alpha:true,antialias:true});
-      S.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+      const ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+      S.renderer=new THREE.WebGLRenderer({canvas:$('gl'),alpha:true,antialias:!ios,powerPreference:'low-power'});
+      S.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,ios?1.5:2));
       S.scene=new THREE.Scene();
       S.cam=new THREE.OrthographicCamera(0,1,0,-1,-500,500);S.cam.position.z=100;
       S.scene.add(new THREE.AmbientLight(0xffffff,.22));
@@ -544,32 +547,37 @@ const MATS={
     S.light.position.set(w*.8,-h*.2,300);
     S.dirty=true;
   }
-  function rebuild(){
+  function makeSlot(){
+    const grp=new THREE.Group();const glow=new THREE.Sprite(S.mats.g1);glow.position.z=-5;grp.add(glow);
+    const m=new THREE.Group();const body=new THREE.Mesh(S.geos[1].crown,S.mats[1]);const rimM=new THREE.Mesh(S.geos[1].crown,S.mats.e1);rimM.scale.setScalar(1.07);m.add(body);m.add(rimM);m.rotation.set(.7,0,0);grp.add(m);
+    const core=new THREE.Mesh(S.geos[1].crown,S.mats.c1);core.rotation.copy(m.rotation);grp.add(core);
+    const sp=new THREE.Sprite(S.mats.spark);sp.scale.set(0,0,1);grp.add(sp);
+    S.scene.add(grp);return {grp,m,body,rimM,core,glow,sp,r:-1,c:-1,v:0,spin:.4+Math.random()*.4,sel:false,pop:0,base:1,tw:Math.random()*10,used:false};
+  }
+  function rebuild(){ // 物件池：只更新既有物件，不重建（避免 iOS 記憶體累積）
     if(!S.ok||!G)return;S.dirty=false;
-    S.meshes.forEach(m=>S.scene.remove(m.grp));S.meshes=[];
-    const g=$('grid'),{cols,rows}=G;
+    const {cols,rows}=G;let k=0;
     for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
       const v=G.board[r][c];if(!v)continue;const el=tileAt(r,c);if(!el)continue;
-      const bw=el.offsetWidth,cx=el.offsetLeft+bw/2,cy=el.offsetTop+el.offsetHeight/2,sz=bw*.5;const b={width:bw};
-      const grp=new THREE.Group();grp.position.set(cx,-cy,0);
-      const glow=new THREE.Sprite(S.mats['g'+v]);glow.scale.set(b.width*1.4,b.width*1.4,1);glow.position.z=-5;grp.add(glow);
-      const m=new THREE.Group();m.add(new THREE.Mesh(S.geos[v].crown,S.mats[v]));const rimM=new THREE.Mesh(S.geos[v].crown,S.mats['e'+v]);rimM.scale.setScalar(1.07);m.add(rimM);
-      m.scale.setScalar(sz*.95);m.rotation.set(.7,0,0);grp.add(m);
-      const core=new THREE.Group();core.add(new THREE.Mesh(S.geos[v].crown,S.mats['c'+v]));core.add(new THREE.Mesh(S.geos[v].pv,S.mats['c'+v]));core.scale.setScalar(sz*.45);core.rotation.copy(m.rotation);grp.add(core);
-      const sp=new THREE.Sprite(S.mats.spark);sp.scale.set(0,0,1);sp.position.set(sz*.5,sz*.5,20);grp.add(sp);
-      S.scene.add(grp);S.meshes.push({grp,m,core,glow,sp,r,c,v,spin:.4+Math.random()*.4,sel:false,pop:0,base:sz,tw:Math.random()*10});
+      const o=S.meshes[k]||(S.meshes[k]=makeSlot());k++;
+      const bw=el.offsetWidth,cx=el.offsetLeft+bw/2,cy=el.offsetTop+el.offsetHeight/2,sz=bw*.5;
+      o.grp.position.set(cx,-cy,0);o.grp.visible=true;o.used=true;o.r=r;o.c=c;o.base=sz;o.pop=0;o.sel=false;
+      if(o.v!==v){o.v=v;o.body.geometry=S.geos[v].crown;o.rimM.geometry=S.geos[v].crown;o.core.geometry=S.geos[v].crown}
+      o.body.material=S.mats[v];o.rimM.material=S.mats['e'+v];o.core.material=S.mats['c'+v];o.glow.material=S.mats['g'+v];
+      o.glow.scale.set(bw*1.4,bw*1.4,1);o.m.scale.setScalar(sz*.95);o.core.scale.setScalar(sz*.45);o.sp.position.set(sz*.5,sz*.5,20);
     }
+    for(;k<S.meshes.length;k++){S.meshes[k].grp.visible=false;S.meshes[k].used=false;S.meshes[k].r=-1;S.meshes[k].c=-1}
   }
-  function find(r,c){return S.meshes.find(o=>o.r===r&&o.c===c)}
+  function find(r,c){return S.meshes.find(o=>o.used&&o.r===r&&o.c===c)}
   function select(r,c,on){const o=find(r,c);if(o){o.sel=on;o.glow.material=on?S.mats['g'+o.v]:S.mats['g'+o.v]}}
   function pop(r,c){const o=find(r,c);if(o)o.pop=1}
   function loop(){
     S.raf=requestAnimationFrame(loop);
     if(!S.ok||!G||!$('s-game').classList.contains('on'))return;
-    if((S.f=(S.f||0)+1)%30===0){const g=$('grid');if(g.clientWidth!==S.w||g.clientHeight!==S.h)layout()}
+    if((S.f=(S.f||0)+1)%30===0){const g=$('grid');if(Math.abs(g.clientWidth-S.w)>2||Math.abs(g.clientHeight-S.h)>2)layout()}
     if(S.dirty)rebuild();
     S.t+=.016;
-    for(const o of S.meshes){
+    for(const o of S.meshes){if(!o.used)continue;
       const spd=o.sel?4:o.spin;o.m.rotation.y=Math.sin(S.t*.9*spd+o.c*.7)*.35+(o.sel?S.t*3:0);o.m.rotation.x=.7+Math.sin(S.t*.7+o.r)*.12;o.core.rotation.copy(o.m.rotation);
       const tw=(S.t*.6+o.tw)%7;const ts=tw<.6?Math.sin(tw/.6*Math.PI)*o.base*1.1:0;o.sp.scale.set(ts,ts,1);o.sp.material.rotation=S.t;
       const bob=1+Math.sin(S.t*2+o.r+o.c)*.04;
@@ -848,7 +856,7 @@ let picking=null,prevScreen='s-title',paused=false;
 function showSettings(){
   prevScreen=document.querySelector('.screen.on').id;
   if(G&&!G.over&&(G.timer||G.cd)){pauseGame();paused=true}
-  $('opt-angel').value=store.get('angel')||'sometimes';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'metal';$('opt-pal').value=store.get('pal')||'rainbow';$('opt-speed').value=store.get('speed')||'1.3';$('opt-sfx').value=store.get('clearSfx')||'magic';$('opt-bgm').value=store.get('bgm')||'on';
+  $('opt-angel').value=store.get('angel')||'sometimes';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'metal';$('opt-gl').value=store.get('gl')||'on';$('opt-pal').value=store.get('pal')||'rainbow';$('opt-speed').value=store.get('speed')||'1.3';$('opt-sfx').value=store.get('clearSfx')||'magic';$('opt-bgm').value=store.get('bgm')||'on';
   const box=$('slots');box.innerHTML='';
   ROLES.forEach(r=>{
     const d=document.createElement('div');d.className='slot';
@@ -871,6 +879,7 @@ $('opt-shake').onchange=e=>store.set('shake',e.target.value);
 $('opt-shake2').onchange=e=>store.set('shake2',e.target.value);
 $('opt-dev').onchange=e=>store.set('dev',e.target.value); // DEV-UNLOCK
 $('opt-mat').onchange=e=>{store.set('mat',e.target.value);GL.restyle()};
+$('opt-gl').onchange=e=>{store.set('gl',e.target.value);toast('重新整理頁面後生效')};
 $('opt-pal').onchange=e=>{store.set('pal',e.target.value);GL.restyle()};
 $('opt-speed').onchange=e=>store.set('speed',e.target.value);
 function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1600)}
