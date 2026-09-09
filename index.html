@@ -263,8 +263,6 @@ body.webgl .tile.drop{animation:none}
 <!-- 角色設定頁 -->
 <div class="screen" id="s-settings">
   <div style="width:100%;display:flex;align-items:center;justify-content:space-between"><button class="ghost" style="margin:0" onclick="closeSettings()">← 返回</button><h1 style="font-size:28px;margin:12px 0">設定</h1><span style="width:80px"></span></div>
-  <div class="sub">換家人照片：只存在這台裝置上，不會上傳到網路</div>
-  <div class="slots" id="slots"></div>
   <div class="opts">
     <label>背景音樂 <select id="opt-bgm"><option value="on">開</option><option value="off">關</option></select></label>
     <div class="opt">消除音效 <span><select id="opt-sfx"><option value="glass">玻璃碎裂</option><option value="crystal">水晶叮</option><option value="bubble">泡泡啵</option><option value="boom">爆炸砰</option><option value="bell">鈴鐺</option><option value="laser">雷射</option><option value="magic">魔法</option><option value="coin">金幣</option><option value="drum">鼓聲</option><option value="drop">水滴</option><option value="none">不要音效</option></select> <button class="ghost" style="margin:0;padding:4px 10px;font-size:14px" onclick="previewSfx()">試聽</button></span></div>
@@ -276,18 +274,16 @@ body.webgl .tile.drop{animation:none}
     <label>手機震動 <select id="opt-vib"><option value="on">開</option><option value="off">關</option></select></label>
     <label>暴龍速度 <select id="opt-speed"><option value="0.75">慢一點</option><option value="1">普通</option><option value="1.3" selected>快一點</option></select></label>
     <label>鼓勵天使出現 <select id="opt-angel"><option value="often">常常</option><option value="sometimes" selected>偶爾</option><option value="off">關閉</option></select></label>
-    <div class="opt">公主與怪獸互換 <button class="ghost" style="margin:0;padding:6px 14px" onclick="swapRoles()">互換</button></div>
   </div>
   <div class="opts" style="margin-top:14px">
     <label>測試模式：解鎖全部關卡（DEV-UNLOCK） <select id="opt-dev"><option value="off">關</option><option value="on">開</option></select></label>
     <div class="opt">重置所有進度 <button class="ghost" style="margin:0;padding:6px 14px;border-color:var(--red);color:var(--red)" onclick="resetProgress()">重置</button></div>
   </div>
   <button class="big" onclick="closeSettings()" style="margin-top:20px">完成</button>
-  <input type="file" id="file" accept="image/*" style="display:none">
 </div>
 
 <script>
-const VERSION='v2.33 (3D)';
+const VERSION='v2.34 (3D)';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -306,10 +302,7 @@ const ROLES=[
   {id:'boss',name:'爸爸大魔王',emoji:DINO_SVG.replace(/#3e9c5c/g,'#b8302c').replace(/#2a6e40/g,'#6b1512').replace(/#8f2d2d/g,'#4a0f0f').replace('#dff5e1','#ffe1dc'),hint:'最終關'},
   {id:'angel',name:'媽媽天使',emoji:'👩',hint:'鼓勵'}
 ];
-function faceHTML(id){
-  const r=ROLES.find(x=>x.id===id);const img=store.get('face_'+id);
-  return img?`<img src="${img}" alt="">`:r.emoji;
-}
+function faceHTML(id){return ROLES.find(x=>x.id===id).emoji}
 function renderFace(el,id){el.innerHTML=faceHTML(id)}
 
 /* ====== 玩家與排行榜 ====== */
@@ -472,11 +465,11 @@ const GL=(()=>{
 let COLORS={};function applyPalette(){const p=PALETTES[store.get('pal')]||PALETTES.rainbow;COLORS={};p.forEach((h,i)=>{COLORS[i+1]=parseInt(h,16);document.documentElement.style.setProperty('--c'+(i+1),'#'+h)})}
 applyPalette();
 const MATS={
-  candy:  {metalness:0,roughness:.05,clearcoat:1,clearcoatRoughness:.03,reflectivity:1,env:1.0,opacity:1,emissive:.12,flat:true,glow:.4,core:.12},
-  cut:    {metalness:.1,roughness:.08,clearcoat:1,clearcoatRoughness:.05,reflectivity:1,env:1.0,opacity:.9,emissive:.22,flat:true,glow:.4,core:.12},
+  candy:  {metalness:0,roughness:.06,clearcoat:1,clearcoatRoughness:.03,reflectivity:1,env:.9,opacity:1,emissive:.12,flat:true,glow:.4,core:.12},
+  cut:    {metalness:.1,roughness:.12,clearcoat:1,clearcoatRoughness:.08,reflectivity:.8,env:.6,opacity:.9,emissive:.22,flat:true,glow:.4,core:.12},
   jelly:  {metalness:0,roughness:.15,clearcoat:.6,clearcoatRoughness:.2,reflectivity:.5,env:.4,opacity:.72,emissive:.35,flat:true,glow:.45,core:.25},
   matte:  {metalness:0,roughness:.65,clearcoat:0,clearcoatRoughness:1,reflectivity:.3,env:.15,opacity:1,emissive:.05,flat:true,glow:.15,core:0},
-  metal:  {metalness:1,roughness:.1,clearcoat:.8,clearcoatRoughness:.05,reflectivity:1,env:1.5,opacity:1,emissive:.05,flat:true,glow:.3,core:.1},
+  metal:  {metalness:1,roughness:.12,clearcoat:.6,clearcoatRoughness:.08,reflectivity:1,env:1.6,opacity:1,emissive:0,flat:true,glow:.25,core:0},
   crystal:{metalness:0,roughness:.05,clearcoat:1,clearcoatRoughness:.05,reflectivity:1,env:.8,opacity:.85,emissive:.6,flat:true,glow:.7,core:.35},
   energymetal:{metalness:.85,roughness:.18,clearcoat:.5,clearcoatRoughness:.1,reflectivity:1,env:1.2,opacity:1,emissive:.45,flat:true,glow:.6,core:.3}
 };
@@ -488,10 +481,10 @@ const MATS={
       S.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,ios?1.5:2));
       S.scene=new THREE.Scene();
       S.cam=new THREE.OrthographicCamera(0,1,0,-1,-500,500);S.cam.position.z=100;
-      S.scene.add(new THREE.AmbientLight(0xffffff,.22));
-      const d=new THREE.DirectionalLight(0xffffff,1.8);d.position.set(-1,1.5,1.5);S.scene.add(d);
-      const rim=new THREE.DirectionalLight(0x9fc0ff,.9);rim.position.set(1.3,-.9,.7);S.scene.add(rim);
-      const fill=new THREE.DirectionalLight(0xffe0b0,.35);fill.position.set(.6,.2,-1);S.scene.add(fill);
+      S.scene.add(new THREE.AmbientLight(0xffffff,.15));
+      const d=new THREE.DirectionalLight(0xffffff,2.0);d.position.set(-1,1.4,1.6);S.scene.add(d);
+      const rim=new THREE.DirectionalLight(0x8fb4ff,1.0);rim.position.set(1.2,-.8,.8);S.scene.add(rim);
+      const fill=new THREE.DirectionalLight(0xffe0b0,.5);fill.position.set(.6,.2,-1);S.scene.add(fill);
       const p=new THREE.PointLight(0xfff0c0,.6,0);p.position.set(200,-100,220);S.scene.add(p);S.light=p;
       // 9 種寶石切割外形（2D 輪廓 → 桌面／冠部／亭部），奇偶切面一律連續
       const outline=(kind)=>{const P=[];const push=(x,y)=>P.push([x,y]);const N=32;
@@ -513,10 +506,8 @@ const MATS={
       S.geos={};for(const n in SPEC){const [k,h,tb,pav]=SPEC[n];const cg=gemGeo(k,h,tb,pav);S.geos[n]={crown:cg,pv:new THREE.BufferGeometry(),edges:new THREE.EdgesGeometry(cg,12)}}
       // 環境貼圖（漸層天空盒）讓切面有反光
       const mk=(c1,c2)=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');const g=x.createLinearGradient(0,0,0,64);g.addColorStop(0,c1);g.addColorStop(1,c2);x.fillStyle=g;x.fillRect(0,0,64,64);
-        // 環形光：中灰底、上方寬亮帶、中段細亮帶、下方暗（參考商業寶石渲染的 ring light 設定）
-        const g2=x.createLinearGradient(0,0,0,64);g2.addColorStop(0,'#9aa0b8');g2.addColorStop(.5,'#3a3550');g2.addColorStop(1,'#0a0814');x.fillStyle=g2;x.fillRect(0,0,64,64);
-        x.fillStyle='rgba(255,255,255,.95)';x.fillRect(0,6,64,9);x.fillStyle='rgba(255,255,255,.55)';x.fillRect(0,30,64,3);x.fillStyle='rgba(255,240,200,.5)';x.fillRect(0,44,64,2);return c};
-      const env=new THREE.CubeTexture([mk(),mk(),mk(),mk(),mk(),mk()]);env.needsUpdate=true;S.env=env;
+        x.fillStyle='rgba(255,255,255,.95)';x.fillRect(0,6,64,8);x.fillStyle='rgba(0,0,0,.6)';x.fillRect(0,22,64,10);x.fillStyle='rgba(255,255,255,.6)';x.fillRect(0,40,64,5);return c};
+      const env=new THREE.CubeTexture([mk('#ffffff','#5a4a8a'),mk('#cfd8ff','#3a2a6a'),mk('#ffffff','#e0e6ff'),mk('#3a2a6a','#0a0820'),mk('#ffffff','#5a4a8a'),mk('#cfd8ff','#3a2a6a')]);env.needsUpdate=true;S.env=env;
       // 光暈貼圖
       const cv=document.createElement('canvas');cv.width=cv.height=128;const x=cv.getContext('2d');
       const gr=x.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,255,255,.9)');gr.addColorStop(.35,'rgba(255,255,255,.35)');gr.addColorStop(1,'rgba(255,255,255,0)');
@@ -549,7 +540,7 @@ const MATS={
   }
   function makeSlot(){
     const grp=new THREE.Group();const glow=new THREE.Sprite(S.mats.g1);glow.position.z=-5;grp.add(glow);
-    const m=new THREE.Group();const body=new THREE.Mesh(S.geos[1].crown,S.mats[1]);const rimM=new THREE.Mesh(S.geos[1].crown,S.mats.e1);rimM.scale.setScalar(1.07);m.add(body);m.add(rimM);m.rotation.set(.7,0,0);grp.add(m);
+    const m=new THREE.Group();const body=new THREE.Mesh(S.geos[1].crown,S.mats[1]);const rimM=new THREE.Mesh(S.geos[1].crown,S.mats.e1);rimM.scale.setScalar(1.07);rimM.visible=false;m.add(body);m.add(rimM);m.rotation.set(.7,0,0);grp.add(m);
     const core=new THREE.Mesh(S.geos[1].crown,S.mats.c1);core.rotation.copy(m.rotation);grp.add(core);
     const sp=new THREE.Sprite(S.mats.spark);sp.scale.set(0,0,1);grp.add(sp);
     S.scene.add(grp);return {grp,m,body,rimM,core,glow,sp,r:-1,c:-1,v:0,spin:.4+Math.random()*.4,sel:false,pop:0,base:1,tw:Math.random()*10,used:false};
@@ -852,23 +843,15 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(refit);
 function settle(){refit();requestAnimationFrame(()=>{refit();setTimeout(refit,120);setTimeout(refit,600)})}
 
 /* ====== 角色設定 ====== */
-let picking=null,prevScreen='s-title',paused=false;
+let prevScreen='s-title',paused=false;
 function showSettings(){
   prevScreen=document.querySelector('.screen.on').id;
   if(G&&!G.over&&(G.timer||G.cd)){pauseGame();paused=true}
   $('opt-angel').value=store.get('angel')||'sometimes';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'metal';$('opt-gl').value=store.get('gl')||'on';$('opt-pal').value=store.get('pal')||'rainbow';$('opt-speed').value=store.get('speed')||'1.3';$('opt-sfx').value=store.get('clearSfx')||'magic';$('opt-bgm').value=store.get('bgm')||'on';
-  const box=$('slots');box.innerHTML='';
-  ROLES.forEach(r=>{
-    const d=document.createElement('div');d.className='slot';
-    d.innerHTML=`<div class="face" id="slot-${r.id}"></div><label>${r.name}<small style="opacity:.6;font-weight:500">（${r.hint}）</small></label>
-      <div class="row"><button onclick="pick('${r.id}')">📷 換照片</button><button class="del" onclick="clearFace('${r.id}')">清除</button></div>`;
-    box.appendChild(d);renderFace($('slot-'+r.id),r.id);
-  });
   show('s-settings');
 }
 function closeSettings(){
-  if(prevScreen==='s-game'&&G&&!G.over){renderFace($('princess-face'),'princess');renderFace($('monster-face'),G.lv.boss?'boss':'monster');renderFace($('angel-face'),'angel');
-    show('s-game');if(paused){resumeGame();paused=false}fitGrid();placeActors()}
+  if(prevScreen==='s-game'&&G&&!G.over){show('s-game');if(paused){resumeGame();paused=false}fitGrid();placeActors()}
   else goTitle();
 }
 $('opt-angel').onchange=e=>store.set('angel',e.target.value);
@@ -885,21 +868,7 @@ $('opt-speed').onchange=e=>store.set('speed',e.target.value);
 function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1600)}
 function resetProgress(){if(!confirm('確定要清除所有星星和關卡進度嗎？'))return;progress.unlocked=1;progress.stars={};saveProgress();store.del('lastLevel');toast('已重置進度')}
 function previewSfx(){sfx.shatter();vib(40)}
-function pick(id){picking=id;$('file').value='';$('file').click()}
-function clearFace(id){store.del('face_'+id);renderFace($('slot-'+id),id);toast('已清除')}
-$('file').onchange=e=>{
-  const f=e.target.files[0];if(!f)return;
-  const img=new Image();img.onload=()=>{
-    const S=200,cv=document.createElement('canvas');cv.width=cv.height=S;const x=cv.getContext('2d');
-    const m=Math.min(img.width,img.height);
-    x.beginPath();x.arc(S/2,S/2,S/2,0,Math.PI*2);x.clip();
-    x.drawImage(img,(img.width-m)/2,(img.height-m)/2,m,m,0,0,S,S);
-    store.set('face_'+picking,cv.toDataURL('image/jpeg',.85));renderFace($('slot-'+picking),picking);
-  };img.src=URL.createObjectURL(f);
-};
-function swapRoles(){const a=store.get('face_princess'),b=store.get('face_monster');
-  a?store.set('face_monster',a):store.del('face_monster');b?store.set('face_princess',b):store.del('face_princess');
-  renderFace($('slot-princess'),'princess');renderFace($('slot-monster'),'monster');toast((a||b)?'已互換照片':'還沒上傳照片，沒有東西可以換');}
+
 
 $('lb-level').onchange=renderBoard;
 renderLevels();renderPlayers();
