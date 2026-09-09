@@ -163,8 +163,9 @@ body.webgl .tile.drop{animation:none}
 @keyframes cnt{0%{transform:scale(2);opacity:0}30%{transform:scale(1);opacity:1}100%{opacity:0}}
 .tut{max-width:360px;font-size:19px;line-height:1.6;text-align:left}
 .tut b{color:var(--gold)}
-.players{display:flex;gap:10px;justify-content:center;margin:4px 0 12px}
-.pl{display:flex;flex-direction:column;align-items:center;gap:4px;background:transparent;color:var(--cream);font-size:14px;font-weight:700;opacity:.5;padding:4px}
+.players{display:flex;gap:8px;justify-content:center;margin:4px 0 12px;flex-wrap:wrap}
+.pl{display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;color:var(--cream);font-size:14px;font-weight:700;opacity:.5;padding:4px;max-width:76px}
+.pl small{font-size:10px}
 .pl .face{width:56px;height:56px;font-size:30px}
 .pl.on{opacity:1}.pl.on .face{box-shadow:0 0 0 4px var(--gold)}
 .lb{width:100%;max-width:480px;margin:10px 0}
@@ -283,7 +284,7 @@ body.webgl .tile.drop{animation:none}
 </div>
 
 <script>
-const VERSION='v2.36 (3D)';
+const VERSION='v2.37 (3D)';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -295,28 +296,33 @@ const store={
 
 /* ====== 角色 ====== */
 const DINO_SVG=`<svg viewBox="0 0 100 100" width="100%" height="100%"><rect width="100" height="100" fill="#dff5e1"/><path d="M14 40 C14 20 32 8 50 10 C70 8 88 22 86 42 L88 70 C86 84 70 92 50 92 C30 92 14 84 12 70Z" fill="#3e9c5c"/><path d="M22 14 l6 10 M50 6 l0 10 M78 14 l-6 10" stroke="#2a6e40" stroke-width="4" stroke-linecap="round"/><path d="M14 62 C22 60 78 60 86 62 L88 72 C86 84 70 92 50 92 C30 92 14 84 12 72Z" fill="#8f2d2d"/><path d="M16 60 L86 60 L84 66 L18 66Z" fill="#b8f0c0"/><path d="M22 66 l4.5 9 4.5 -9z M33 66 l4.5 9 4.5 -9z M44 66 l4.5 9 4.5 -9z M55 66 l4.5 9 4.5 -9z M66 66 l4.5 9 4.5 -9z" fill="#fff" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><path d="M30 86 l4 -7 4 7z M46 87 l4 -7 4 7z M62 86 l4 -7 4 7z" fill="#fff" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><ellipse cx="34" cy="42" rx="10" ry="11" fill="#fff"/><ellipse cx="66" cy="42" rx="10" ry="11" fill="#fff"/><ellipse cx="35" cy="44" rx="6" ry="7.5" fill="#1d3b2a"/><ellipse cx="67" cy="44" rx="6" ry="7.5" fill="#1d3b2a"/><circle cx="37" cy="41" r="2.2" fill="#fff"/><circle cx="69" cy="41" r="2.2" fill="#fff"/><path d="M24 31 Q33 27 42 34" stroke="#2a6e40" stroke-width="4.5" stroke-linecap="round" fill="none"/><path d="M76 31 Q67 27 58 34" stroke="#2a6e40" stroke-width="4.5" stroke-linecap="round" fill="none"/><circle cx="26" cy="58" r="4.5" fill="#ffb3c6" opacity=".7"/><circle cx="74" cy="58" r="4.5" fill="#ffb3c6" opacity=".7"/><ellipse cx="44" cy="56" rx="3" ry="2" fill="#2a6e40"/><ellipse cx="56" cy="56" rx="3" ry="2" fill="#2a6e40"/><circle cx="20" cy="50" r="3" fill="#2a6e40"/><circle cx="80" cy="50" r="3" fill="#2a6e40"/></svg>`;
+const SMILEY_SVG=`<svg viewBox="0 0 100 100" width="100%" height="100%"><rect width="100" height="100" fill="#fff3c4"/><circle cx="50" cy="50" r="42" fill="#ffd93d"/><circle cx="50" cy="50" r="42" fill="none" stroke="#e8b800" stroke-width="4"/><ellipse cx="35" cy="42" rx="7" ry="9" fill="#4a3200"/><ellipse cx="65" cy="42" rx="7" ry="9" fill="#4a3200"/><circle cx="37" cy="39" r="2.5" fill="#fff"/><circle cx="67" cy="39" r="2.5" fill="#fff"/><path d="M30 60 Q50 80 70 60" stroke="#4a3200" stroke-width="6" fill="none" stroke-linecap="round"/><circle cx="24" cy="58" r="6" fill="#ff9db0" opacity=".65"/><circle cx="76" cy="58" r="6" fill="#ff9db0" opacity=".65"/></svg>`;
 const PRINCESS_SVG=`<svg viewBox="0 0 100 100" width="100%" height="100%"><rect width="100" height="100" fill="#ffe4f1"/><path d="M14 62 C10 30 30 10 50 10 C70 10 90 30 86 62 L84 90 L16 90 Z" fill="#ff8fc8"/><ellipse cx="50" cy="58" rx="30" ry="33" fill="#ffe9d6"/><path d="M22 44 C28 22 72 22 78 44 C68 36 60 38 50 40 C40 38 32 36 22 44Z" fill="#ff8fc8"/><path d="M26 42 C30 34 40 30 50 32 C46 38 40 40 26 42Z" fill="#ffb3dc"/><ellipse cx="37" cy="59" rx="10" ry="12" fill="#fff"/><ellipse cx="63" cy="59" rx="10" ry="12" fill="#fff"/><ellipse cx="38" cy="61" rx="7.5" ry="9.5" fill="#5b3a8a"/><ellipse cx="64" cy="61" rx="7.5" ry="9.5" fill="#5b3a8a"/><circle cx="40" cy="57" r="2.6" fill="#fff"/><circle cx="66" cy="57" r="2.6" fill="#fff"/><circle cx="36" cy="63" r="1.3" fill="#fff"/><circle cx="62" cy="63" r="1.3" fill="#fff"/><path d="M29 49 Q37 44 45 49" stroke="#5b3a8a" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M55 49 Q63 44 71 49" stroke="#5b3a8a" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="28" cy="70" r="5" fill="#ffb3c6" opacity=".8"/><circle cx="72" cy="70" r="5" fill="#ffb3c6" opacity=".8"/><path d="M43 76 Q50 82 57 76" stroke="#d94f7a" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M45 20 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#fff" opacity=".9"/></svg>`;
 const ROLES=[
   {id:'princess',name:'Yuna',emoji:PRINCESS_SVG,hint:'公主'},
   {id:'monster',name:'Bryson',emoji:DINO_SVG,hint:'暴龍'},
   {id:'boss',name:'爸爸大魔王',emoji:DINO_SVG.replace(/#3e9c5c/g,'#b8302c').replace(/#2a6e40/g,'#6b1512').replace(/#8f2d2d/g,'#4a0f0f').replace('#dff5e1','#ffe1dc'),hint:'最終關'},
-  {id:'angel',name:'媽媽天使',emoji:'👩',hint:'鼓勵'}
+  {id:'angel',name:'媽媽天使',emoji:'👩',hint:'鼓勵'},
+  {id:'guest',name:'其他人',emoji:SMILEY_SVG,hint:'自訂'}
 ];
 function faceHTML(id){return ROLES.find(x=>x.id===id).emoji}
 function renderFace(el,id){el.innerHTML=faceHTML(id)}
 
 /* ====== 玩家與排行榜 ====== */
-const PLAYERS=[{id:'princess',name:'Yuna'},{id:'monster',name:'Bryson'},{id:'angel',name:'媽媽'},{id:'boss',name:'爸爸'}];
+const PLAYERS=[{id:'princess',name:'Yuna'},{id:'monster',name:'Bryson'},{id:'angel',name:'媽媽'},{id:'boss',name:'爸爸'},{id:'guest',name:'其他人'}];
+function playerName(id){return id==='guest'?(store.get('guestName')||'其他人'):(PLAYERS.find(p=>p.id===id)||PLAYERS[0]).name}
 function curPlayer(){return store.get('player')||'princess'}
-function renderPlayers(){const b=$('players');b.innerHTML='';PLAYERS.forEach(p=>{const d=document.createElement('button');d.className='pl'+(curPlayer()===p.id?' on':'');d.innerHTML=`<div class="face">${faceHTML(p.id)}</div>${p.name}`;d.onclick=()=>{store.set('player',p.id);renderPlayers()};b.appendChild(d)})}
+function renderPlayers(){const b=$('players');b.innerHTML='';PLAYERS.forEach(p=>{const on=curPlayer()===p.id;const d=document.createElement('button');d.className='pl'+(on?' on':'');
+  d.innerHTML=`<div class="face">${faceHTML(p.id)}</div>${playerName(p.id)}${p.id==='guest'?'<small style="opacity:.7;font-weight:500">✏️ 改名字</small>':''}`;
+  d.onclick=()=>{if(p.id==='guest'&&on){const n=prompt('你叫什麼名字？',store.get('guestName')||'');if(n!==null){const t=n.trim().slice(0,8);t?store.set('guestName',t):store.del('guestName')}}store.set('player',p.id);renderPlayers()};b.appendChild(d)})}
 function getBoard(){try{return JSON.parse(store.get('board')||'[]')}catch(e){return []}}
 function addScore(entry){const b=getBoard();b.push(entry);b.sort((x,y)=>y.score-x.score);store.set('board',JSON.stringify(b.slice(0,50)));return b.findIndex(e=>e===entry)+1}
 function showBoard(){const sel=$('lb-level');if(sel.options.length===1)LEVELS.forEach((lv,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=lv.name;sel.appendChild(o)});renderBoard();show('s-board')}
 function renderBoard(){const f=$('lb-level').value,box=$('lb');let b=getBoard();if(f!=='all')b=b.filter(e=>e.level==f);b=b.slice(0,10);
   box.innerHTML='<div class="row head"><span>#</span><span></span><span>玩家 / 關卡</span><span>星星</span><span class="sc">分數</span></div>';
   if(!b.length){box.innerHTML+='<div class="emp">還沒有紀錄，去打敗暴龍吧！</div>';return}
-  b.forEach((e,i)=>{const p=PLAYERS.find(x=>x.id===e.player)||PLAYERS[0];const me=e.player===curPlayer();
-    box.innerHTML+=`<div class="row${me?' me':''}"><span class="rk">${i+1}</span><div class="face">${faceHTML(p.id)}</div><span>${p.name}<br><small style="opacity:.7">${LEVELS[e.level-1].name} · ${e.date}</small></span><span style="color:#ffd166">${'★'.repeat(e.stars)}</span><span class="sc">${e.score}</span></div>`})}
+  b.forEach((e,i)=>{const p=PLAYERS.find(x=>x.id===e.player)||PLAYERS[0];const me=e.player===curPlayer();const nm=e.player==='guest'?(e.name||playerName('guest')):p.name;
+    box.innerHTML+=`<div class="row${me?' me':''}"><span class="rk">${i+1}</span><div class="face">${faceHTML(p.id)}</div><span>${nm}<br><small style="opacity:.7">${LEVELS[e.level-1].name} · ${e.date}</small></span><span style="color:#ffd166">${'★'.repeat(e.stars)}</span><span class="sc">${e.score}</span></div>`})}
 function clearBoard(){if(!confirm('確定清除所有排行榜紀錄？'))return;store.del('board');renderBoard();toast('已清除')}
 /* ====== 關卡 ====== */
 /* stepMs: 怪獸每走 1 格的毫秒; path: 路長; target: 要消幾對; hint: 顯示「還差?」; penalty: 配錯怪獸前進; five: 出 5 的權重(1=正常) */
@@ -793,7 +799,7 @@ function win(){
   stopGame();sfx.win();document.body.classList.remove('danger');
   const n=G.i+1,stars=G.wrong===0?3:G.wrong<=3?2:1;
   const secs=Math.round((Date.now()-G.start)/1000),bonus=Math.max(0,180-secs)*2+stars*50+(G.lv.boss?200:0);addPts(bonus);
-  const rank=addScore({player:curPlayer(),level:n,score:G.score,stars,date:new Date().toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'})});
+  const rank=addScore({player:curPlayer(),name:playerName(curPlayer()),level:n,score:G.score,stars,date:new Date().toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'})});
   progress.stars[n]=Math.max(progress.stars[n]||0,stars);
   if(n>=progress.unlocked&&n<LEVELS.length)progress.unlocked=n+1;saveProgress();store.set('lastLevel',Math.min(n,LEVELS.length-1));
   $('ov-stars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);
