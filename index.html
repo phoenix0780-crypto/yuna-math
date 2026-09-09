@@ -284,7 +284,7 @@ body.webgl .tile.drop{animation:none}
 </div>
 
 <script>
-const VERSION='v2.39 (3D)';
+const VERSION='v2.40 (3D)';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -314,7 +314,7 @@ function playerName(id){return id==='guest'?(store.get('guestName')||'其他人'
 function curPlayer(){return store.get('player')||'princess'}
 function renderPlayers(){const b=$('players');b.innerHTML='';PLAYERS.forEach(p=>{const on=curPlayer()===p.id;const d=document.createElement('button');d.className='pl'+(on?' on':'');
   d.innerHTML=`<div class="face">${faceHTML(p.id)}</div>${playerName(p.id)}${p.id==='guest'?'<small style="opacity:.7;font-weight:500">✏️ 改名字</small>':''}`;
-  d.onclick=()=>{if(p.id==='guest'&&on){const n=prompt('你叫什麼名字？',store.get('guestName')||'');if(n!==null){const t=n.trim().slice(0,8);t?store.set('guestName',t):store.del('guestName')}}store.set('player',p.id);renderPlayers()};b.appendChild(d)})}
+  d.onclick=()=>{if(p.id==='guest'&&on){const n=prompt('你叫什麼名字？',store.get('guestName')||'');if(n!==null){const t=n.trim().slice(0,8);t?store.set('guestName',t):store.del('guestName')}}store.set('player',p.id);loadProgress();renderPlayers();renderLevels()};b.appendChild(d)})}
 function getBoard(){try{return JSON.parse(store.get('board')||'[]')}catch(e){return []}}
 function addScore(entry){const b=getBoard();b.push(entry);b.sort((x,y)=>y.score-x.score);store.set('board',JSON.stringify(b.slice(0,50)));return b.findIndex(e=>e===entry)+1}
 function showBoard(){const sel=$('lb-level');if(sel.options.length===1)LEVELS.forEach((lv,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=lv.name;sel.appendChild(o)});renderBoard();show('s-board')}
@@ -334,8 +334,15 @@ const LEVELS=[
   {cols:7,rows:9,stepMs:2400,path:20,target:35,hint:false,penalty:true, five:.15, name:'第 5 關'},
   {cols:7,rows:9,stepMs:1900,path:15,target:40,hint:false,penalty:true, five:.15, name:'最終 Boss',boss:true}
 ];
-const progress=JSON.parse(store.get('progress')||'{"unlocked":1,"stars":{}}');
-function saveProgress(){store.set('progress',JSON.stringify(progress))}
+let progress={unlocked:1,stars:{}};
+function progKey(){return 'progress_'+curPlayer()}
+function lastKey(){return 'lastLevel_'+curPlayer()}
+function loadProgress(){
+  try{const old=store.get('progress');if(old&&!store.get('progress_princess')){store.set('progress_princess',old);store.del('progress')}
+      const ol=store.get('lastLevel');if(ol!==null&&store.get('lastLevel_princess')===null){store.set('lastLevel_princess',ol);store.del('lastLevel')}}catch(e){}
+  try{progress=JSON.parse(store.get(progKey())||'{"unlocked":1,"stars":{}}')}catch(e){progress={unlocked:1,stars:{}}}
+}
+function saveProgress(){store.set(progKey(),JSON.stringify(progress))}
 
 /* ====== 音效 ====== */
 let muted=store.get('muted')==='1';let actx;
@@ -409,9 +416,9 @@ const BGM=(()=>{
 /* ====== 畫面切換 ====== */
 const $=id=>document.getElementById(id);
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');$('gear').classList.toggle('hide',id!=='s-title')}
-function goTitle(){stopGame();document.body.classList.remove('danger');renderLevels();renderPlayers();show('s-title')}
+function goTitle(){stopGame();document.body.classList.remove('danger');loadProgress();renderLevels();renderPlayers();show('s-title')}
 function renderLevels(){
-  const last=+store.get('lastLevel');const bc=$('btn-continue');if(last>=0&&store.get('lastLevel')!==null){bc.style.display='';bc.textContent=`▶ 繼續 ${LEVELS[last].name}`}else bc.style.display='none';
+  const last=+store.get(lastKey());const bc=$('btn-continue');if(store.get(lastKey())!==null&&last>=0){bc.style.display='';bc.textContent=`▶ 繼續 ${LEVELS[last].name}`}else bc.style.display='none';
   const box=$('levels');box.innerHTML='';
   LEVELS.forEach((lv,i)=>{
     const n=i+1,locked=n>progress.unlocked&&store.get('dev')!=='on' /* DEV-UNLOCK */,st=progress.stars[n]||0;
@@ -434,7 +441,7 @@ function startLevel(i){
   renderFace($('princess-face'),'princess');renderFace($('monster-face'),lv.boss?'boss':'monster');renderFace($('angel-face'),'angel');
   $('monster').classList.toggle('boss',!!lv.boss);$('monster-tag').textContent=lv.boss?'爸爸大魔王':'Bryson';$('m-crown').style.display=lv.boss?'':'none';
   $('overlay').classList.remove('on');$('angel').classList.remove('on');document.body.classList.remove('danger');
-  show('s-game');newBoard();settle();store.set('lastLevel',i);requestWake();$('btn-pause').textContent='⏸ 暫停';
+  show('s-game');newBoard();settle();store.set(lastKey(),i);requestWake();$('btn-pause').textContent='⏸ 暫停';
   const begin=()=>{say('p',lv.boss?'爸爸大魔王來了！快！':'快幫我湊 10！',1500);countdown(()=>{if(G&&!G.over)G.timer=setInterval(tick,100)})};
   if(!store.get('tutorialDone')){showTutorial(begin)}else begin();
 }
@@ -807,7 +814,7 @@ function win(){
   const secs=Math.round((Date.now()-G.start)/1000),bonus=Math.max(0,180-secs)*2+stars*50+(G.lv.boss?200:0);addPts(bonus);
   const rank=addScore({player:curPlayer(),name:playerName(curPlayer()),level:n,score:G.score,stars,date:new Date().toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'})});
   progress.stars[n]=Math.max(progress.stars[n]||0,stars);
-  if(n>=progress.unlocked&&n<LEVELS.length)progress.unlocked=n+1;saveProgress();store.set('lastLevel',Math.min(n,LEVELS.length-1));
+  if(n>=progress.unlocked&&n<LEVELS.length)progress.unlocked=n+1;saveProgress();store.set(lastKey(),Math.min(n,LEVELS.length-1));
   $('ov-stars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);
   $('ov-title').textContent=G.lv.boss?'打敗爸爸大魔王！':'公主逃進城堡了！';
   $('ov-text').innerHTML=(G.lv.boss?'全家一起放煙火 🎆🎆🎆':`消了 ${G.cleared} 對，暴龍摔倒了 🤕`)+`<br><b style="color:var(--gold)">${G.score} 分</b>（時間加成 +${bonus}）· 排行榜第 ${rank} 名`;
@@ -850,7 +857,7 @@ function fitGrid(){
   g.style.width=(t*cols+gap*(cols-1))+'px';g.style.height=(t*rows+gap*(rows-1))+'px';g.style.setProperty('--fs',Math.round(t*.5)+'px');
   GL.layout();
 }
-function continueLast(){const l=+store.get('lastLevel');if(l>=0&&l<LEVELS.length)startLevel(l)}
+function continueLast(){const l=+store.get(lastKey());if(l>=0&&l<LEVELS.length)startLevel(l)}
 function refit(){if(G&&!G.over){fitGrid();placeActors()}}
 window.addEventListener('resize',refit);window.addEventListener('orientationchange',()=>setTimeout(refit,300));
 if(window.visualViewport)window.visualViewport.addEventListener('resize',refit);
@@ -886,7 +893,7 @@ function previewSfx(){sfx.shatter();vib(40)}
 
 
 $('lb-level').onchange=renderBoard;
-renderLevels();renderPlayers();
+loadProgress();renderLevels();renderPlayers();
 </script>
 </body>
 </html>
