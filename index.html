@@ -283,7 +283,7 @@ body.webgl .tile.drop{animation:none}
 </div>
 
 <script>
-const VERSION='v2.34 (3D)';
+const VERSION='v2.35 (3D)';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -477,8 +477,8 @@ const MATS={
     if(S.ok||typeof THREE==='undefined'||CRASHED||store.get('gl')==='off')return;
     try{
       const ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-      S.renderer=new THREE.WebGLRenderer({canvas:$('gl'),alpha:true,antialias:!ios,powerPreference:'low-power'});
-      S.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,ios?1.5:2));
+      S.renderer=new THREE.WebGLRenderer({canvas:$('gl'),alpha:true,antialias:true,powerPreference:'low-power'});
+      S.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
       S.scene=new THREE.Scene();
       S.cam=new THREE.OrthographicCamera(0,1,0,-1,-500,500);S.cam.position.z=100;
       S.scene.add(new THREE.AmbientLight(0xffffff,.15));
@@ -487,7 +487,7 @@ const MATS={
       const fill=new THREE.DirectionalLight(0xffe0b0,.5);fill.position.set(.6,.2,-1);S.scene.add(fill);
       const p=new THREE.PointLight(0xfff0c0,.6,0);p.position.set(200,-100,220);S.scene.add(p);S.light=p;
       // 9 種寶石切割外形（2D 輪廓 → 桌面／冠部／亭部），奇偶切面一律連續
-      const outline=(kind)=>{const P=[];const push=(x,y)=>P.push([x,y]);const N=32;
+      const outline=(kind)=>{const P=[];const push=(x,y)=>P.push([x,y]);const N=48;
         if(kind==='heart'){for(let i=0;i<N;i++){const t=i/N*Math.PI*2;push(16*Math.pow(Math.sin(t),3)/17,(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))/17)}}
         else if(kind==='round'){for(let i=0;i<16;i++){const t=i/16*Math.PI*2;push(Math.sin(t),Math.cos(t))}}
         else if(kind==='cushion'){for(let i=0;i<8;i++){const t=(i+.5)/8*Math.PI*2;push(Math.sin(t),Math.cos(t))}}
@@ -584,9 +584,13 @@ const MATS={
 })();
 
 /* ====== 盤面 ====== */
-function rnd(lv){ // 產生 1-9，依權重降低 5
-  const w=[1,1,1,1,lv.five,1,1,1,1],t=w.reduce((a,b)=>a+b);let r=Math.random()*t;
-  for(let i=0;i<9;i++){r-=w[i];if(r<0)return i+1}return 9;
+// 洗牌袋：每一輪 1/9、2/8、3/7、4/6 各出現同樣次數，5 依關卡權重；避免某組合連續大量出現
+function refillBag(lv){const b=[];for(let k=0;k<2;k++)b.push(1,9,2,8,3,7,4,6);const f=Math.max(1,Math.round(lv.five*4));for(let k=0;k<f;k++)b.push(5);
+  for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}G.bag=b}
+function rnd(lv,bad){ // 從袋子取一顆；bad 為不可用的數字集合
+  if(!G.bag||!G.bag.length)refillBag(lv);
+  if(bad){const i=G.bag.findIndex(v=>!bad.has(v));if(i>=0)return G.bag.splice(i,1)[0];refillBag(lv);const j=G.bag.findIndex(v=>!bad.has(v));if(j>=0)return G.bag.splice(j,1)[0]}
+  return G.bag.pop();
 }
 function newBoard(){
   const {cols,rows}=G;G.board=[];
@@ -602,8 +606,7 @@ function smartNum(r,c){ // 60% 機率與某個已存在的鄰居湊 10
 function safeNum(r,c){ // 補進的寶石不與上下左右鄰居湊 10
   const nb=[[r-1,c],[r+1,c],[r,c-1],[r,c+1]].map(([y,x])=>G.board[y]&&G.board[y][x]).filter(v=>v);
   const bad=new Set(nb.map(v=>10-v));
-  for(let i=0;i<20;i++){const v=rnd(G.lv);if(!bad.has(v))return v}
-  return rnd(G.lv);
+  return rnd(G.lv,bad);
 }
 function drawBoard(){
   const g=$('grid'),{cols,rows}=G;g.innerHTML='';GL.rebuildSoon();
