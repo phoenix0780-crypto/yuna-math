@@ -284,7 +284,7 @@ body.webgl .tile.drop{animation:none}
 </div>
 
 <script>
-const VERSION='v2.27 (3D)';document.getElementById('ver').textContent=VERSION;
+const VERSION='v2.28 (3D)';document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
 const store={
@@ -490,7 +490,7 @@ const MATS={
       const p=new THREE.PointLight(0xfff0c0,.6,0);p.position.set(200,-100,220);S.scene.add(p);S.light=p;
       // 切割寶石：冠部(上窄下寬短柱)＋亭部(倒圓錐)，各數字不同切面數與比例
       const cut=(n,top,h,pav)=>{const g=new THREE.Group();const crown=new THREE.CylinderGeometry(top,1,h,n,1,false);crown.translate(0,h/2,0);
-        const pv=new THREE.ConeGeometry(1,pav,n,1,false);pv.rotateX(Math.PI);pv.translate(0,-pav/2,0);g.userData={crown,pv};return g};
+        const pv=new THREE.CylinderGeometry(1,0,pav,n,1,false);pv.translate(0,-pav/2,0);g.userData={crown,pv};return g};
       const SPEC={1:[3,.45,.7,1.2],2:[4,.45,.7,1.3],3:[5,.45,.7,1.2],4:[6,.5,.7,1.2],5:[7,.45,.75,1.25],6:[8,.5,.7,1.2],7:[9,.5,.7,1.3],8:[10,.5,.7,1.2],9:[12,.55,.7,1.2]};
       S.geos={};for(const n in SPEC){const [k,top,h,pav]=SPEC[n];const g=cut(k,top,h,pav).userData;g.crown.computeVertexNormals();g.pv.computeVertexNormals();S.geos[n]=g}
       // 環境貼圖（漸層天空盒）讓切面有反光
