@@ -272,8 +272,8 @@ body.webgl .tile.drop{animation:none}
     <label>消除時畫面震動 <select id="opt-shake"><option value="off">關</option><option value="1">輕</option><option value="2">中</option><option value="3">強</option></select></label>
     <label>連擊時畫面震動 <select id="opt-shake2"><option value="on">開</option><option value="off">關</option></select></label>
     <label>手機震動 <select id="opt-vib"><option value="on">開</option><option value="off">關</option></select></label>
-    <label>暴龍速度 <select id="opt-speed"><option value="0.75">慢一點</option><option value="1">普通</option><option value="1.3" selected>快一點</option></select></label>
-    <label>鼓勵天使出現 <select id="opt-angel"><option value="often">常常</option><option value="sometimes" selected>偶爾</option><option value="off">關閉</option></select></label>
+    <label>暴龍速度 <select id="opt-speed"><option value="0.75" selected>慢一點</option><option value="1">普通</option><option value="1.3">快一點</option></select></label>
+    <label>鼓勵天使出現 <select id="opt-angel"><option value="often" selected>常常</option><option value="sometimes">偶爾</option><option value="off">關閉</option></select></label>
   </div>
   <div class="opts" style="margin-top:14px">
     <label>測試模式：解鎖全部關卡（DEV-UNLOCK） <select id="opt-dev"><option value="off">關</option><option value="on">開</option></select></label>
@@ -283,7 +283,7 @@ body.webgl .tile.drop{animation:none}
 </div>
 
 <script>
-const VERSION='v2.35 (3D)';
+const VERSION='v2.36 (3D)';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -520,7 +520,7 @@ const MATS={
     }catch(e){S.ok=false}
   }
   function buildMats(){
-    const M=MATS[store.get('mat')]||MATS.metal;S.glowBase=M.glow;
+    const M=MATS[store.get('mat')]||MATS.energymetal;S.glowBase=M.glow;
     for(const n in COLORS){
       S.mats[n]=new THREE.MeshPhysicalMaterial({color:COLORS[n],metalness:M.metalness,roughness:M.roughness,clearcoat:M.clearcoat,clearcoatRoughness:M.clearcoatRoughness,reflectivity:M.reflectivity,envMap:S.env,envMapIntensity:M.env,transparent:M.opacity<1,opacity:M.opacity,emissive:COLORS[n],emissiveIntensity:M.emissive,flatShading:M.flat});
       S.mats['g'+n]=new THREE.SpriteMaterial({map:S.glowTex,color:COLORS[n],transparent:true,opacity:M.glow,blending:THREE.AdditiveBlending,depthWrite:false});
@@ -766,7 +766,7 @@ let acc=0;
 function tick(){
   if(G.busy||G.over)return;
   acc+=100;G.idle+=100;
-  let step=G.lv.stepMs/(+store.get('speed')||1.3);if(G.idle>8000)step*=.5; // 太久沒動作加速
+  let step=G.lv.stepMs/(+store.get('speed')||0.75);if(G.idle>8000)step*=.5; // 太久沒動作加速
   if(acc>=step){acc=0;sfx.step();moveMonster(1,'shake');if(G.idle>8000&&G.idle%8000<200){say('m','吼——！',800);sfx.roar();$('monster').classList.add('roar');setTimeout(()=>$('monster').classList.remove('roar'),600)}}
   if(G.idle>10000&&G.idle%10000<200)hint();
 }
@@ -776,7 +776,7 @@ function say(who,txt,ms){const b=$(who==='p'?'p-bubble':'m-bubble');b.textConten
 
 /* ====== 鼓勵天使 ====== */
 function angel(kind){
-  const mode=store.get('angel')||'sometimes';if(mode==='off')return;
+  const mode=store.get('angel')||'often';if(mode==='off')return;
   if(mode==='sometimes'&&kind!=='danger'&&Math.random()<.5)return;
   let txt='';
   if(kind==='hint'||kind==='danger'){const list=[];countMoves(list);if(!list.length)return;const [r1,c1,r2,c2]=list[0];
@@ -850,7 +850,7 @@ let prevScreen='s-title',paused=false;
 function showSettings(){
   prevScreen=document.querySelector('.screen.on').id;
   if(G&&!G.over&&(G.timer||G.cd)){pauseGame();paused=true}
-  $('opt-angel').value=store.get('angel')||'sometimes';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'metal';$('opt-gl').value=store.get('gl')||'on';$('opt-pal').value=store.get('pal')||'rainbow';$('opt-speed').value=store.get('speed')||'1.3';$('opt-sfx').value=store.get('clearSfx')||'magic';$('opt-bgm').value=store.get('bgm')||'on';
+  $('opt-angel').value=store.get('angel')||'often';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'energymetal';$('opt-gl').value=store.get('gl')||'on';$('opt-pal').value=store.get('pal')||'rainbow';$('opt-speed').value=store.get('speed')||'0.75';$('opt-sfx').value=store.get('clearSfx')||'magic';$('opt-bgm').value=store.get('bgm')||'on';
   show('s-settings');
 }
 function closeSettings(){
