@@ -355,7 +355,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.33';
+const VERSION='v3.34';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -552,6 +552,7 @@ function goTitle(){if(G&&!G.over)recordRun('quit');stopGame();document.body.clas
 function renderLevels(){
   const lastL=store.get(lastKey())!==null?+store.get(lastKey()):-1;
   const fresh=lastL<0&&progress.unlocked<=1&&!Object.keys(progress.stars).length;
+  const guideIdx=fresh?0:(lastL>=0&&lastL<LEVELS.length?lastL:-1);
   $('guidetip').style.display=fresh?'':'none';
   $('guidetip').textContent='👆 按「第一關」開始玩！';
   const box=$('levels');box.innerHTML='';
@@ -562,7 +563,7 @@ function renderLevels(){
     b.innerHTML=lv.boss?`👑<small>大魔王</small>`:`<span style="font-size:15px;line-height:1.1">${lv.name}</span><small>${lv.target} 對</small>`;
     if(st)b.innerHTML+=`<span class="stars">${'★'.repeat(st)}</span>`;
     if(!locked)b.onclick=()=>startLevel(i);
-    if(fresh&&i===0)b.classList.add('guide');
+    if(i===guideIdx&&!locked)b.classList.add('guide');
     box.appendChild(b);
   });
 }
