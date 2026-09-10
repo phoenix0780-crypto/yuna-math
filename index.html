@@ -71,7 +71,7 @@ h1{font-size:40px;margin:0 0 2px;color:var(--gold);text-shadow:0 4px 0 #a86f00;l
 .lv.locked{background:#5d4b80;color:#b8a9d6;box-shadow:0 5px 0 #3b2d57}
 .lv.boss{background:var(--red);color:#fff;box-shadow:0 5px 0 #a3213b}
 .lv.guide{animation:lvGuide 1.2s ease-in-out infinite}
-@keyframes lvGuide{0%,100%{transform:scale(1);box-shadow:0 5px 0 #c9b58f}50%{transform:scale(1.12);box-shadow:0 5px 0 #c9b58f,0 0 0 8px rgba(255,209,102,.4)}}
+@keyframes lvGuide{0%,100%{box-shadow:0 5px 0 #c9b58f,0 0 0 0 rgba(255,209,102,0),0 0 0 0 rgba(255,209,102,0)}50%{box-shadow:0 5px 0 #c9b58f,0 0 14px 4px rgba(255,209,102,.75),0 0 26px 10px rgba(255,209,102,.35)}}
 .guidetip{font-size:14px;color:var(--gold);font-weight:700;margin:0 0 10px;animation:twinkle 1.4s infinite alternate}
 .lv .stars{font-size:12px;color:#e0a100}
 /* game */
@@ -203,6 +203,7 @@ body.webgl .tile.sel{box-shadow:none}
 .pl.on{opacity:1}.pl.on .face{box-shadow:0 0 0 4px var(--gold)}
 .pl.p2{opacity:1}.pl.p2 .face{box-shadow:0 0 0 4px #33ccff}
 .pl{position:relative}
+.pl .pen{position:absolute;left:2px;top:-2px;width:20px;height:20px;border-radius:50%;background:var(--cream);font-size:11px;display:flex;align-items:center;justify-content:center;border:2px solid var(--sky);z-index:2}
 .pl .seat{position:absolute;top:-2px;right:2px;width:20px;height:20px;border-radius:50%;background:var(--gold);color:var(--ink);font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--sky);z-index:2}
 .pl.p2 .seat{background:#33ccff}
 .lb{width:100%;max-width:480px;margin:10px 0}
@@ -354,7 +355,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.32';
+const VERSION='v3.33';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -401,7 +402,7 @@ function renderPlayers(){const b=$('players');b.innerHTML='';const duo=curMode()
     const d=document.createElement('button');d.className='pl'+(s1?' on':'')+(s2?' p2':'');
     d.innerHTML=`<div class="face">${faceHTML(p.id)}</div>${playerName(p.id)}`+
       (duo&&(s1||s2)?`<span class="seat">${s1?'1':'2'}</span>`:'')+
-      (p.id==='guest'&&s1?'<small style="opacity:.7;font-weight:500">✏️ 改名字</small>':'');
+      (p.id==='guest'&&s1?'<span class="pen">✏️</span>':'');
     d.onclick=()=>{
       if(p.id==='guest'&&s1){const n=prompt('你叫什麼名字？',store.get('guestName')||'');if(n!==null){const t=n.trim().slice(0,8);t?store.set('guestName',t):store.del('guestName')}}
       if(duo){
