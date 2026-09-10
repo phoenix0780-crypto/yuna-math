@@ -171,9 +171,11 @@ body.webgl .tile.drop{animation:none}
 .picker.open .arrow{transform:rotate(180deg)}
 .picker.hint{animation:pickerHint 1.6s ease-in-out 3}
 @keyframes pickerHint{0%,100%{box-shadow:0 0 0 0 rgba(255,209,102,0)}50%{box-shadow:0 0 0 6px rgba(255,209,102,.35);border-color:var(--gold)}}
-.drawer{width:100%;max-height:0;overflow:hidden;transition:max-height .28s ease;background:rgba(255,255,255,.06);border-radius:20px}
-.drawer.open{max-height:420px;margin-bottom:10px;padding:6px 8px}
-.players{display:flex;gap:8px;justify-content:center;margin:4px 0 12px;flex-wrap:wrap}
+.drawer{width:100%;display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease;background:rgba(255,255,255,.06);border-radius:20px}
+.drawer > .inner{overflow:hidden;min-height:0}
+.drawer.open{grid-template-rows:1fr;margin-bottom:10px}
+.drawer.open > .inner{padding:8px}
+.players{display:flex;gap:8px;justify-content:center;margin:4px 0 6px;flex-wrap:wrap}
 .pl{display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;color:var(--cream);font-size:14px;font-weight:700;opacity:.5;padding:4px;max-width:76px}
 .pl small{font-size:10px}
 .pl .face{width:56px;height:56px;font-size:30px}
@@ -248,11 +250,11 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
   <div class="modes" id="modes"></div>
   <div class="modehint" id="modehint"></div>
   <button class="picker" id="picker" onclick="togglePicker()"></button>
-  <div class="drawer" id="drawer">
+  <div class="drawer" id="drawer"><div class="inner">
     <div class="sub" style="margin:2px 0 4px">誰在玩？</div>
     <div class="players" id="players"></div>
     <div id="duo-pick" style="display:none"><div class="sub" style="margin:6px 0 4px">跟誰一起玩？</div><div class="players" id="players2"></div></div>
-  </div>
+  </div></div>
   <div class="levels" id="levels"></div>
   <button class="ghost" onclick="showBoard()">🏆 排行榜</button>
   <button class="big" id="btn-continue" onclick="continueLast()" style="display:none">▶ 繼續上次</button>
@@ -328,7 +330,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.5';
+const VERSION='v3.6';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -362,7 +364,8 @@ function renderFace(el,id){el.innerHTML=faceHTML(id)}
 const PLAYERS=[{id:'princess',name:'Yuna'},{id:'monster',name:'Bryson'},{id:'angel',name:'媽媽'},{id:'boss',name:'爸爸'},{id:'guest',name:'其他人'},{id:'turtle',name:'李宥穎'},{id:'princess2',name:'李亞恩'},{id:'robot',name:'蕭阿伯'}];
 function playerName(id){return id==='guest'?(store.get('guestName')||'其他人'):(PLAYERS.find(p=>p.id===id)||PLAYERS[0]).name}
 function curPlayer(){return store.get('player')||'princess'}
-function togglePicker(){const p=$('picker'),d=$('drawer');const on=!d.classList.contains('open');d.classList.toggle('open',on);p.classList.toggle('open',on);p.classList.remove('hint');store.set('pickedOnce','1')}
+function togglePicker(){const p=$('picker'),d=$('drawer');const on=!d.classList.contains('open');d.classList.toggle('open',on);p.classList.toggle('open',on);p.classList.remove('hint');store.set('pickedOnce','1');
+  if(on)setTimeout(()=>{try{d.scrollIntoView({behavior:'smooth',block:'nearest'})}catch(e){}},320)}
 function renderPicker(){const p=$('picker');const two=curMode()==='duo';
   p.innerHTML=`<div class="face">${faceHTML(curPlayer())}</div>`+(two?`<div class="face">${faceHTML(curPlayer2())}</div>`:'')+
     `<span class="who">${playerName(curPlayer())}${two?' &amp; '+playerName(curPlayer2()):''}<small>${two?'點一下換玩家':'現在是誰在玩？點一下換人'}</small></span><span class="arrow">▼</span>`;
