@@ -355,7 +355,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.34';
+const VERSION='v3.35';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -411,6 +411,7 @@ function renderPlayers(){const b=$('players');b.innerHTML='';const duo=curMode()
       }else{store.set('player',p.id);loadProgress()}
       renderPlayers();renderLevels();renderPicker()};
     b.appendChild(d)})}
+function stamp(){const d=new Date();const p=n=>String(n).padStart(2,'0');return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`}
 function getBoard(){try{return JSON.parse(store.get('board')||'[]')}catch(e){return []}}
 function addScore(entry){const b=getBoard();b.push(entry);b.sort((x,y)=>y.score-x.score);store.set('board',JSON.stringify(b.slice(0,50)));return b.findIndex(e=>e===entry)+1}
 function showBoard(){const sel=$('lb-level');if(sel.options.length===1)LEVELS.forEach((lv,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=lv.name;sel.appendChild(o)});renderBoard();show('s-board')}
