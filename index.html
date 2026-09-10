@@ -182,6 +182,7 @@ body.webgl .tile.drop{animation:none}
 .modehint{font-size:13px;opacity:.7;margin:-4px 0 10px;text-align:center}
 #tf{grid-area:track;width:100%;max-width:520px;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px 10px;background:rgba(255,255,255,.09);border:2px solid rgba(255,255,255,.22);border-radius:22px;box-shadow:0 6px 20px rgba(0,0,0,.35)}
 #s-game.calm #tf{display:flex}#s-game.calm .track{display:none}
+#s-game.duomode .tfslot{min-height:calc(min(340px,84vw) / 5 + 16px)}
 .tfmsg{font-size:clamp(22px,6.2vw,34px);line-height:1.25;font-weight:900;color:var(--gold);text-shadow:0 2px 8px #000;text-align:center;min-height:2.5em;display:flex;align-items:center;justify-content:center}
 .tfslot{position:relative;width:100%;display:flex;align-items:center;justify-content:center;min-height:calc(clamp(38px,10vw,56px)  2 + 7px)}
 .tfslot > {position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);transition:opacity .18s}
@@ -314,7 +315,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.3';
+const VERSION='v3.4';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -508,7 +509,7 @@ function startLevel(i){
   renderFace($('princess-face'),'princess');renderFace($('monster-face'),lv.boss?'boss':'monster');renderFace($('angel-face'),'angel');
   $('monster').classList.toggle('boss',!!lv.boss);$('monster-tag').textContent=lv.boss?'爸爸大魔王':'Bryson';$('m-crown').style.display=lv.boss?'':'none';
   $('overlay').classList.remove('on');$('angel').classList.remove('on');document.body.classList.remove('danger');
-  $('s-game').classList.toggle('calm',G.mode!=='adventure');$('tframe').classList.add('off');$('ask').classList.add('off');$('duoscore').style.display='none';
+  $('s-game').classList.toggle('calm',G.mode!=='adventure');$('s-game').classList.toggle('duomode',G.mode==='duo');$('tframe').classList.add('off');$('ask').classList.add('off');$('duoscore').style.display='none';
   if(G.mode==='practice'){const a=$('ask');a.innerHTML='';for(let n=1;n<=9;n++){const b=document.createElement('button');b.textContent=n;a.appendChild(b)}}
   if(G.mode==='duo'){G.duo=[curPlayer(),curPlayer2()];G.dscore=[0,0];G.turn=0;G.phase='pose';renderDuo();tfMsg(duoPrompt())}
   else if(G.mode==='practice')tfMsg('點一顆寶石');
