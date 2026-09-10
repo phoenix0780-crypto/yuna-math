@@ -311,7 +311,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.0';
+const VERSION='v3.1';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -356,10 +356,10 @@ function renderBoard(){const f=$('lb-level').value,box=$('lb');let b=getBoard();
   box.innerHTML='<div class="row head"><span>#</span><span></span><span>玩家 / 關卡 / 時間</span><span>結果</span><span class="sc">分數</span></div>';
   if(!b.length){box.innerHTML+='<div class="emp">還沒有紀錄，去打敗暴龍吧！</div>';return}
   b.forEach((e,i)=>{const p=PLAYERS.find(x=>x.id===e.player)||PLAYERS[0];const me=e.player===curPlayer();const nm=e.player==='guest'?(e.name||playerName('guest')):p.name;
-    box.innerHTML+=`<div class="row${me?' me':''}"><span class="rk">${i+1}</span><div class="face">${faceHTML(p.id)}</div><span>${nm}<br><small style="opacity:.7">${LEVELS[e.level-1].name} · ${({practice:'練習',duo:'親子'})[e.mode]||'冒險'} · ${e.date}</small></span><span style="color:#ffd166;font-size:13px">${e.result==='win'||!e.result?('★'.repeat(e.stars)||'過關'):(e.result==='lose'?'😱 被抓':'🚪 中離')}</span><span class="sc">${e.score}</span></div>`})}
+    box.innerHTML+=`<div class="row${me?' me':''}"><span class="rk">${i+1}</span><div class="face">${faceHTML(p.id)}</div><span>${nm}<br><small style="opacity:.7">${LEVELS[e.level-1].name} · ${({practice:'數感',duo:'親子'})[e.mode]||'冒險'} · ${e.date}</small></span><span style="color:#ffd166;font-size:13px">${e.result==='win'||!e.result?('★'.repeat(e.stars)||'過關'):(e.result==='lose'?'😱 被抓':'🚪 中離')}</span><span class="sc">${e.score}</span></div>`})}
 function clearBoard(){if(!confirm('確定清除所有排行榜紀錄？'))return;store.del('board');renderBoard();toast('已清除')}
 /* ====== 遊戲模式 ====== */
-const MODES=[{id:'practice',name:'🌱 練習',hint:'沒有暴龍，先想「還差幾」再找寶石，錯了會教你'},{id:'adventure',name:'🦖 冒險',hint:'暴龍會追公主，消得越快牠退越遠'},{id:'duo',name:'👫 親子',hint:'兩人輪流：一人點一顆出題，另一人找出湊 10 的搭檔'}];
+const MODES=[{id:'practice',name:'🌱 數感',hint:'沒有暴龍，先想「還差幾」再找寶石，錯了會教你'},{id:'adventure',name:'🦖 冒險',hint:'暴龍會追公主，消得越快牠退越遠'},{id:'duo',name:'👫 親子',hint:'兩人輪流：一人點一顆出題，另一人找出湊 10 的搭檔'}];
 function curMode(){return store.get('mode')||'practice'}
 function renderModes(){const b=$('modes');b.innerHTML='';MODES.forEach(m=>{const d=document.createElement('button');d.className=curMode()===m.id?'on':'';d.textContent=m.name;d.onclick=()=>{store.set('mode',m.id);renderModes()};b.appendChild(d)});
   $('modehint').textContent=MODES.find(m=>m.id===curMode()).hint;$('duo-pick').style.display=curMode()==='duo'?'':'none';if(curMode()==='duo')renderPlayers2()}
