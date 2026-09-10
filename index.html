@@ -417,7 +417,6 @@ function renderModes(){const b=$('modes');b.innerHTML='';MODES.forEach(m=>{const
   if(curMode()==='duo'){pickSeat=1;$('drawer').classList.add('open');$('picker').classList.add('open')}
   renderPlayers();renderPicker()}
 function curPlayer2(){const p=store.get('player2');return (p&&p!==curPlayer())?p:(PLAYERS.find(x=>x.id!==curPlayer()).id)}
-function renderPlayers2(){const b=$('players2');b.innerHTML='';PLAYERS.filter(p=>p.id!==curPlayer()).forEach(p=>{const d=document.createElement('button');d.className='pl'+(curPlayer2()===p.id?' on':'');d.innerHTML=`<div class="face">${faceHTML(p.id)}</div>${playerName(p.id)}`;d.onclick=()=>{store.set('player2',p.id);renderPlayers2();renderPicker()};b.appendChild(d)})}
 const calm=()=>G&&G.mode!=='adventure';
 function tfMsg(t){$('tfmsg').textContent=t}
 let frameTok=0;
