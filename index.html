@@ -116,7 +116,9 @@ body.webgl .tile.drop{animation:none}
 @keyframes pop{50%{transform:scale(1.3)}100%{transform:scale(0);opacity:0}}
 .tile.bad{animation:wrong .4s}
 @keyframes wrong{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
-.tile.hint{animation:blink .5s 3;filter:brightness(1.5)}
+.tile.hint{animation:tgt .8s infinite;z-index:3}
+@keyframes tgt{0%,100%{filter:brightness(1);transform:scale(1)}50%{filter:brightness(1.9);transform:scale(1.12)}}
+.tile.hint .num{text-shadow:0 0 10px #fff,0 0 4px #000}
 @keyframes blink{50%{filter:brightness(1.8)}}
 .tile.drop{animation:drop .3s}
 @keyframes drop{from{transform:translateY(-40px)}}
@@ -193,20 +195,20 @@ body.webgl .tile.drop{animation:none}
 .modes button{background:transparent;color:var(--cream);font-size:15px;font-weight:700;padding:8px 14px;border-radius:24px;opacity:.6}
 .modes button.on{background:var(--gold);color:var(--ink);opacity:1}
 .modehint{font-size:13px;opacity:.7;margin:-4px 0 10px;text-align:center}
-#tf{grid-area:track;width:100%;max-width:520px;min-height:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:min(10px,1.2vh);padding:min(12px,1.4vh) 10px;background:rgba(255,255,255,.09);border:2px solid rgba(255,255,255,.22);border-radius:22px;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+#tf{grid-area:track;width:100%;max-width:440px;min-height:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:min(6px,.8vh);padding:min(8px,1vh) 10px;background:rgba(255,255,255,.09);border:2px solid rgba(255,255,255,.22);border-radius:22px;box-shadow:0 6px 20px rgba(0,0,0,.35)}
 #s-game.calm #tf{display:flex}#s-game.calm .track{display:none}
-.tfmsg{font-size:min(clamp(18px,5.4vw,30px),3.4vh);line-height:1.25;font-weight:900;color:var(--gold);text-shadow:0 2px 8px #000;text-align:center;min-height:2.4em;display:flex;align-items:center;justify-content:center}
+.tfmsg{font-size:min(clamp(16px,4.6vw,25px),3vh);line-height:1.25;font-weight:900;color:var(--gold);text-shadow:0 2px 8px #000;text-align:center;min-height:2.4em;display:flex;align-items:center;justify-content:center}
 .tfslot{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:min(8px,1vh)}
 .tfslot > *{transition:opacity .18s}
 .tfslot > *.off{opacity:.25;pointer-events:none}
-.ask{min-height:calc(min(clamp(34px,9vw,52px),6vh) * 2 + 9px)}
+.ask{min-height:calc(min(clamp(30px,7.6vw,44px),5vh) * 2 + 9px)}
 #s-game.duomode .ask{display:none}
-.tframe{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;width:min(320px,80vw,60vh);padding:6px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.35);border-radius:10px}
+.tframe{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;width:min(230px,58vw,34vh);padding:5px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.35);border-radius:10px}
 .tframe span{aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.12);transition:background .15s,transform .15s}
 .tframe span.a{background:#ff6b6b;box-shadow:0 0 8px #ff6b6b}.tframe span.b{background:#4d96ff;box-shadow:0 0 8px #4d96ff}
 .tframe span.pop{transform:scale(1.3)}
-.ask{--kb:min(clamp(34px,9vw,52px),6vh);display:flex;gap:7px;justify-content:center;flex-wrap:wrap;width:calc(var(--kb) * 5 + 7px * 4 + 2px)}
-.ask button{width:var(--kb);height:var(--kb);flex:0 0 auto;border-radius:14px;background:var(--cream);color:var(--ink);font-size:min(clamp(18px,5.4vw,28px),3.4vh);font-weight:900;box-shadow:0 4px 0 #c9b58f}
+.ask{--kb:min(clamp(30px,7.6vw,44px),5vh);display:flex;gap:7px;justify-content:center;flex-wrap:wrap;width:calc(var(--kb) * 5 + 7px * 4 + 2px)}
+.ask button{width:var(--kb);height:var(--kb);flex:0 0 auto;border-radius:12px;background:var(--cream);color:var(--ink);font-size:min(clamp(16px,4.6vw,24px),3vh);font-weight:900;box-shadow:0 4px 0 #c9b58f}
 .ask button:active{transform:translateY(2px);box-shadow:0 1px 0 #c9b58f}
 .tile .num{position:relative;z-index:2}
 .tile .dots{position:absolute;left:0;right:0;bottom:6%;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;width:56%;margin:0 auto;z-index:2;pointer-events:none}
@@ -332,7 +334,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.9';
+const VERSION='v3.10';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -409,8 +411,11 @@ function showAsk(v){const a=$('ask');a.classList.remove('off');$('tframe').class
   for(let n=1;n<=9;n++){const b=document.createElement('button');b.textContent=n;b.onclick=()=>answerAsk(v,n);a.appendChild(b)}}
 function hideAsk(){$('ask').classList.add('off');G.askPending=false}
 function answerAsk(v,n){if(!G||G.over)return;G.idle=0;frameSet(v,Math.min(n,10-v));
-  if(v+n===10){hideAsk();sfx.ok();tfMsg(`對！${v} + ${n} = 10，找 ${n}！`);addPts(5);
-    const {cols,rows}=G;for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(G.board[r][c]===n&&isAdj(r,c,G.sel[0],G.sel[1])){const t=tileAt(r,c);t.classList.add('hint')}}
+  if(v+n===10){hideAsk();sfx.ok();addPts(5);
+    const {cols,rows}=G;let found=0;
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(G.board[r][c]===n&&isAdj(r,c,G.sel[0],G.sel[1])){tileAt(r,c).classList.add('hint');found++}
+    tfMsg(found?`對！${v} + ${n} = 10，點閃亮的 ${n}！`:`對！${v} + ${n} = 10，但旁邊沒有 ${n}，換一顆試試`);
+    if(!found)setTimeout(()=>{if(G&&!G.over&&G.sel)clearSel()},1800)}
   else{sfx.bad();G.askWrong=(G.askWrong||0)+1;noteWrong(v,n);tfMsg(`${v} + ${n} = ${v+n}，${v+n<10?'太少了':'太多了'}，再想想`);setTimeout(()=>{if(G&&!G.over&&G.askPending)frameSet(v,0)},900);
     if(G.askWrong>=2)setTimeout(()=>tfMsg(`提示：${v} 再數 ${10-v} 個就是 10`),1200)}}
 function isAdj(r1,c1,r2,c2){const dr=Math.abs(r1-r2),dc=Math.abs(c1-c2);return diagOn()?(dr<=1&&dc<=1&&dr+dc>0):(dr+dc===1)}
@@ -829,7 +834,7 @@ g.addEventListener('pointermove',e=>{
 const up=e=>{if(!D.active)return;endDrag();if(!D.moved&&D.sameSel)clearSel();};
 g.addEventListener('pointerup',up);g.addEventListener('pointercancel',up);
 document.addEventListener('pointerup',e=>{if(D.active)endDrag()});}
-function clearSel(keepDiff){if(G.sel){tileAt(G.sel[0],G.sel[1]).classList.remove('sel');GL.select(G.sel[0],G.sel[1],false);G.sel=null}document.querySelectorAll('.tile.hint').forEach(t=>t.classList.remove('hint'));if(G.mode==='practice')hideAsk();if(calm()&&!G.busy)frameClear();if(!keepDiff)$('diff').textContent=''}
+function clearSel(keepDiff){if(G.sel){tileAt(G.sel[0],G.sel[1]).classList.remove('sel');GL.select(G.sel[0],G.sel[1],false);G.sel=null}document.querySelectorAll('.tile.hint').forEach(t=>t.classList.remove('hint'));if(G.mode==='practice')hideAsk();if(calm()&&!G.busy){frameClear();if(!G.over)tfMsg(G.mode==='duo'?duoPrompt():'點一顆寶石')}if(!keepDiff)$('diff').textContent=''}
 function addPts(n){G.score+=n;$('hud-score').textContent=G.score}
 function eliminate(r1,c1,r2,c2){
   G.busy=true;const now=Date.now();
@@ -989,7 +994,7 @@ function fitGrid(){
     avail=vh-pad-8;maxW=vw-leftW-34;
   }else{
     const as=Math.max(40,Math.min(vw/8,vh*.08,92));tr.style.setProperty('--as',as+'px');
-    const trackH=calm()?$('tf').offsetHeight+6:as*1.75+2;avail=vh-pad-hud.offsetHeight-trackH-tb.offsetHeight-$('diff').offsetHeight-24;maxW=Math.min(vw-24,calm()?420:600);
+    const trackH=calm()?$('tf').offsetHeight+6:as*1.75+2;avail=vh-pad-hud.offsetHeight-trackH-tb.offsetHeight-$('diff').offsetHeight-24;maxW=Math.min(vw-16,calm()?520:600);
   }
   const tileByH=(avail-gap*(rows-1))/rows,tileByW=(maxW-gap*(cols-1))/cols;
   const t=Math.max(24,Math.min(tileByH,tileByW));
