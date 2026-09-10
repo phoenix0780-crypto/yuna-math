@@ -334,7 +334,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.10';
+const VERSION='v3.11';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -413,11 +413,12 @@ function hideAsk(){$('ask').classList.add('off');G.askPending=false}
 function answerAsk(v,n){if(!G||G.over)return;G.idle=0;frameSet(v,Math.min(n,10-v));
   if(v+n===10){hideAsk();sfx.ok();addPts(5);
     const {cols,rows}=G;let found=0;
-    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(G.board[r][c]===n&&isAdj(r,c,G.sel[0],G.sel[1])){tileAt(r,c).classList.add('hint');found++}
-    tfMsg(found?`對！${v} + ${n} = 10，點閃亮的 ${n}！`:`對！${v} + ${n} = 10，但旁邊沒有 ${n}，換一顆試試`);
-    if(!found)setTimeout(()=>{if(G&&!G.over&&G.sel)clearSel()},1800)}
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(G.board[r][c]===n&&!(r===G.sel[0]&&c===G.sel[1])&&(!needAdj()||isAdj(r,c,G.sel[0],G.sel[1]))){tileAt(r,c).classList.add('hint');found++}
+    tfMsg(`對！${v} + ${n} = 10，點一顆 ${n}！`);
+    if(!found){tfMsg(`對！${v} + ${n} = 10，可惜盤面上沒有 ${n} 了，換一顆`);setTimeout(()=>{if(G&&!G.over&&G.sel)clearSel()},1800)}}
   else{sfx.bad();G.askWrong=(G.askWrong||0)+1;noteWrong(v,n);tfMsg(`${v} + ${n} = ${v+n}，${v+n<10?'太少了':'太多了'}，再想想`);setTimeout(()=>{if(G&&!G.over&&G.askPending)frameSet(v,0)},900);
     if(G.askWrong>=2)setTimeout(()=>tfMsg(`提示：${v} 再數 ${10-v} 個就是 10`),1200)}}
+function needAdj(){return !calm()}
 function isAdj(r1,c1,r2,c2){const dr=Math.abs(r1-r2),dc=Math.abs(c1-c2);return diagOn()?(dr<=1&&dc<=1&&dr+dc>0):(dr+dc===1)}
 function noteWrong(a,b){const k=[Math.min(a,b),Math.max(a,b)].join('+');G.wrongPairs=G.wrongPairs||{};G.wrongPairs[k]=(G.wrongPairs[k]||0)+1}
 function duoPrompt(){const who=G.turn,ans=1-who;return G.phase==='pose'?`${duoName(who)} 出題：點一顆寶石`:`${duoName(ans)} 找搭檔：哪一顆跟 ${G.poseVal} 湊 10？`}
@@ -555,7 +556,9 @@ function startLevel(i){
 function countdown(done){let n=3;G.busy=true;G.cd=true;const go=()=>{if(!G||G.over)return;if(G.cdPaused){setTimeout(go,200);return}if(n===0){G.busy=false;G.cd=false;done();return}
   const d=document.createElement('div');d.className='count';d.textContent=n;$('s-game').appendChild(d);beep(n===1?880:660,.15);setTimeout(()=>d.remove(),900);n--;setTimeout(go,900)};go()}
 function showTutorial(done){G.busy=true;$('ov-stars').textContent='💎';$('ov-title').textContent='怎麼玩';
-  $('ov-text').innerHTML='<div class="tut">1. 點一顆寶石再點<b>旁邊</b>那顆（含<b>斜的</b>），或直接<b>滑過去</b><br>2. 兩個數字<b>加起來 = 10</b> 就會碎掉<br>3. 每碎一對，暴龍就<b>後退</b><br>4. 暴龍抓到 Yuna 就輸了<br>5. 消滿目標數就過關！</div>';
+  $('ov-text').innerHTML=curMode()==='adventure'
+    ?'<div class="tut">1. 點一顆寶石再點<b>旁邊</b>那顆（含<b>斜的</b>），或直接<b>滑過去</b><br>2. 兩個數字<b>加起來 = 10</b> 就會碎掉<br>3. 每碎一對，暴龍就<b>後退</b><br>4. 暴龍抓到 Yuna 就輸了<br>5. 消滿目標數就過關！</div>'
+    :'<div class="tut">1. 先點<b>任何一顆</b>寶石<br>2. 想想<b>還差幾才到 10</b>，按數字回答<br>3. 答對後，盤面上<b>任何一顆</b>那個數字都可以點（不用在旁邊）<br>4. 兩顆一起碎掉，十格框會告訴你怎麼湊成 10<br>5. 沒有暴龍，慢慢想沒關係！</div>';
   $('ov-family').innerHTML='';const b=$('ov-btn');b.textContent='我知道了！';b.onclick=()=>{store.set('tutorialDone','1');$('overlay').classList.remove('on');$('ov-text').textContent='';done()};$('overlay').classList.add('on')}
 function stopGame(){if(G){clearInterval(G.timer);G.over=true;G.timer=null}releaseWake()}
 function pauseGame(){if(!G||G.over)return;if(G.cd){G.cdPaused=true}if(G.timer){clearInterval(G.timer);G.timer=null}$('btn-pause').textContent='▶ 繼續'}
@@ -725,13 +728,13 @@ function newBoard(){
   if(countMoves()===0)shuffle(false);
   const g=$('grid');g.style.gridTemplateColumns=`repeat(${cols},1fr)`;drawBoard();fitGrid();
 }
-function smartNum(r,c){ // 60% 機率與某個已存在的鄰居湊 10（5+5 除外，避免 5 群聚）
+function smartNum(r,c){ if(!needAdj())return rnd(G.lv); // 數感／親子：單純隨機
   const off=diagOn()?[[-1,0],[0,-1],[-1,-1],[-1,1]]:[[-1,0],[0,-1]];
   const nb=off.map(([dy,dx])=>G.board[r+dy]&&G.board[r+dy][c+dx]).filter(v=>v&&v!==5);
   if(nb.length&&Math.random()<.6){const v=10-nb[Math.floor(Math.random()*nb.length)];if(v!==5||fiveCount()<fiveCap())return v}
   return rnd(G.lv);
 }
-function safeNum(r,c){ // 補進的寶石不與上下左右鄰居湊 10
+function safeNum(r,c){ if(!needAdj())return rnd(G.lv); // 數感／親子：不需避開鄰居
   const off=diagOn()?[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]]:[[-1,0],[1,0],[0,-1],[0,1]];
   const nb=off.map(([dy,dx])=>G.board[r+dy]&&G.board[r+dy][c+dx]).filter(v=>v);
   const bad=new Set(nb.map(v=>10-v));
@@ -749,6 +752,13 @@ function drawBoard(){
 const tileAt=(r,c)=>$('grid').children[r*G.cols+c];
 function countMoves(list){
   const {cols,rows}=G;let n=0;const dg=diagOn();
+  if(!needAdj()){ // 數感／親子：任兩顆都能配
+    const pos={};for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const v=G.board[r][c];if(v)(pos[v]=pos[v]||[]).push([r,c])}
+    for(let a=1;a<=5;a++){const b=10-a,A=pos[a]||[],B=pos[b]||[];
+      if(a===b){for(let i=0;i+1<A.length;i+=2){n++;if(list)list.push([A[i][0],A[i][1],A[i+1][0],A[i+1][1]])}}
+      else{const m=Math.min(A.length,B.length);for(let i=0;i<m;i++){n++;if(list)list.push([A[i][0],A[i][1],B[i][0],B[i][1]])}}}
+    return n;
+  }
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const v=G.board[r][c];if(!v)continue;
     const D=dg?[[0,1],[1,0],[1,1],[1,-1]]:[[0,1],[1,0]];
     for(const [dr,dc] of D){const r2=r+dr,c2=c+dc;if(r2<0||r2>=rows||c2<0||c2>=cols)continue;
@@ -778,7 +788,7 @@ function tap(r,c){
   const [sr,sc]=G.sel;
   if(sr===r&&sc===c){if(G.mode==='duo'){G.phase='pose';renderDuo();tfMsg(duoPrompt())}clearSel();return}
   const dr=Math.abs(sr-r),dc=Math.abs(sc-c);
-  const adjacent=diagOn()?(dr<=1&&dc<=1&&dr+dc>0):(dr+dc===1);
+  const adjacent=needAdj()?(diagOn()?(dr<=1&&dc<=1&&dr+dc>0):(dr+dc===1)):true;
   const a=G.board[sr][sc],b=G.board[r][c];
   if(adjacent&&a+b===10){clearSel();if(G.mode==='duo'){G.dscore[1-G.turn]++;G.turn=1-G.turn;G.phase='pose';renderDuo()}eliminate(sr,sc,r,c);}
   else if(calm()){ // 練習／親子：不懲罰，說明原因
@@ -829,7 +839,7 @@ g.addEventListener('pointermove',e=>{
   const t=tileFromPoint(e.clientX,e.clientY);if(!t)return;const r=+t.dataset.r,c=+t.dataset.c;
   if(r===D.r&&c===D.c)return;
   const adr=Math.abs(r-D.r),adc=Math.abs(c-D.c);
-  if(diagOn()?(adr<=1&&adc<=1):(adr+adc===1)){D.moved=true;const [x,y]=center(t);for(let i=0;i<6;i++)spark(x,y);endDrag();tap(r,c);}
+  if(!needAdj()||(diagOn()?(adr<=1&&adc<=1):(adr+adc===1))){D.moved=true;const [x,y]=center(t);for(let i=0;i<6;i++)spark(x,y);endDrag();tap(r,c);}
 });
 const up=e=>{if(!D.active)return;endDrag();if(!D.moved&&D.sameSel)clearSel();};
 g.addEventListener('pointerup',up);g.addEventListener('pointercancel',up);
