@@ -341,7 +341,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.23';
+const VERSION='v3.24';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -924,7 +924,8 @@ function shatter(el){
 }
 function shake(big){
   let cls=null;
-  if(big){if((store.get('shake2')||'on')==='on')cls='shakeC'}
+  if(calm()){cls=big?'shakeC':'shake2'} // 數感／親子：固定有震動回饋
+  else if(big){if((store.get('shake2')||'on')==='on')cls='shakeC'}
   else{const lv=store.get('shake')||'off';if(lv!=='off')cls='shake'+lv}
   if(!cls)return;const g=$('s-game'),f=$('flash');g.classList.remove('shake1','shake2','shake3','shakeC');f.classList.remove('on');void g.offsetWidth;g.classList.add(cls);
   setTimeout(()=>{g.classList.remove(cls)},450)}
