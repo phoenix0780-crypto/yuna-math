@@ -338,7 +338,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.12';
+const VERSION='v3.13';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -420,11 +420,11 @@ function answerAsk(v,n){if(!G||G.over)return;G.idle=0;frameSet(v,n);
   if(v+n===10){hideAsk();sfx.ok();addPts(5);
     const {cols,rows}=G;let found=0;
     for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(G.board[r][c]===n&&!(r===G.sel[0]&&c===G.sel[1])&&(!needAdj()||isAdj(r,c,G.sel[0],G.sel[1]))){tileAt(r,c).classList.add('hint');found++}
-    tfMsg(`對！${v} + ${n} = 10，點一顆 ${n}！`);
-    if(!found){tfMsg(`對！${v} + ${n} = 10，可惜盤面上沒有 ${n} 了，換一顆`);setTimeout(()=>{if(G&&!G.over&&G.sel)clearSel()},1800)}}
+    tfMsg(`對！${v} + ${n} = 10，點旁邊閃亮的 ${n}！`);
+    if(!found){tfMsg(`對！${v} + ${n} = 10`);setTimeout(()=>{if(G&&!G.over&&G.sel)clearSel()},1500)}}
   else{sfx.bad();G.askWrong=(G.askWrong||0)+1;noteWrong(v,n);tfMsg(`${v} + ${n} = ${v+n}，${v+n<10?`還差 ${10-(v+n)}`:`超出 ${v+n-10}`}，再想想`);setTimeout(()=>{if(G&&!G.over&&G.askPending)frameSet(v,0)},900);
     if(G.askWrong>=2)setTimeout(()=>tfMsg(`提示：${v} 再數 ${10-v} 個就是 10`),1200)}}
-function needAdj(){return !calm()}
+function needAdj(){return true}
 function isAdj(r1,c1,r2,c2){const dr=Math.abs(r1-r2),dc=Math.abs(c1-c2);return diagOn()?(dr<=1&&dc<=1&&dr+dc>0):(dr+dc===1)}
 function noteWrong(a,b){const k=[Math.min(a,b),Math.max(a,b)].join('+');G.wrongPairs=G.wrongPairs||{};G.wrongPairs[k]=(G.wrongPairs[k]||0)+1}
 function duoPrompt(){const who=G.turn,ans=1-who;return G.phase==='pose'?`${duoName(who)} 出題：點一顆寶石`:`${duoName(ans)} 找搭檔：哪一顆跟 ${G.poseVal} 湊 10？`}
@@ -433,7 +433,7 @@ function renderDuo(){const d=$('duoscore');d.style.display='';d.innerHTML=G.duo.
 
 /* ====== 關卡 ====== */
 /* stepMs: 怪獸每走 1 格的毫秒; path: 路長; target: 要消幾對; hint: 顯示「還差?」; penalty: 配錯怪獸前進; five: 出 5 的權重(1=正常) */
-const CALM_SIZE={cols:5,rows:5};
+const CALM_SIZE={cols:5,rows:6};
 const LEVELS=[
   {cols:6,rows:7,stepMs:4000,path:20,target:15,hint:true, penalty:false,five:.5,  name:'第 1 關'},
   {cols:6,rows:7,stepMs:3600,path:20,target:20,hint:false,penalty:false,five:.5,  name:'第 2 關'},
@@ -564,7 +564,7 @@ function countdown(done){let n=3;G.busy=true;G.cd=true;const go=()=>{if(!G||G.ov
 function showTutorial(done){G.busy=true;$('ov-stars').textContent='💎';$('ov-title').textContent='怎麼玩';
   $('ov-text').innerHTML=curMode()==='adventure'
     ?'<div class="tut">1. 點一顆寶石再點<b>旁邊</b>那顆（含<b>斜的</b>），或直接<b>滑過去</b><br>2. 兩個數字<b>加起來 = 10</b> 就會碎掉<br>3. 每碎一對，暴龍就<b>後退</b><br>4. 暴龍抓到 Yuna 就輸了<br>5. 消滿目標數就過關！</div>'
-    :'<div class="tut">1. 先點<b>任何一顆</b>寶石<br>2. 想想<b>還差幾才到 10</b>，按數字回答<br>3. 答對後，盤面上<b>任何一顆</b>那個數字都可以點（不用在旁邊）<br>4. 兩顆一起碎掉，十格框會告訴你怎麼湊成 10<br>5. 沒有暴龍，慢慢想沒關係！</div>';
+    :'<div class="tut">1. 先點<b>任何一顆</b>寶石<br>2. 想想<b>還差幾才到 10</b>，按數字回答<br>3. 答對後，點<b>旁邊閃亮</b>的那顆（每顆寶石旁邊都一定有搭檔）<br>4. 兩顆一起碎掉，十格框會告訴你怎麼湊成 10<br>5. 沒有暴龍，慢慢想沒關係！</div>';
   $('ov-family').innerHTML='';const b=$('ov-btn');b.textContent='我知道了！';b.onclick=()=>{store.set('tutorialDone','1');$('overlay').classList.remove('on');$('ov-text').textContent='';done()};$('overlay').classList.add('on')}
 function stopGame(){if(G){clearInterval(G.timer);G.over=true;G.timer=null}releaseWake()}
 function pauseGame(){if(!G||G.over)return;if(G.cd){G.cdPaused=true}if(G.timer){clearInterval(G.timer);G.timer=null}$('btn-pause').textContent='▶ 繼續'}
@@ -728,19 +728,55 @@ function rnd(lv,bad){ // 從袋子取一顆；bad 為不可用的數字集合
   if(i<0)i=G.bag.length-1;
   return G.bag.splice(i,1)[0];
 }
+function pairFill(){
+  const {cols,rows}=G;const id=[];for(let r=0;r<rows;r++){id[r]=[];for(let c=0;c<cols;c++)id[r][c]=-1}
+  let k=0;for(let c=0;c<cols;c++)for(let r=0;r<rows;r+=2){id[r][c]=k;id[r+1][c]=k;k++}
+  for(let t=0;t<400;t++){
+    const r=Math.floor(Math.random()*(rows-1)),c=Math.floor(Math.random()*(cols-1));
+    const a=id[r][c],b=id[r][c+1],d=id[r+1][c],e=id[r+1][c+1];
+    if(a===d&&b===e&&a!==b){id[r][c+1]=a;id[r+1][c]=b;id[r+1][c+1]=b}
+    else if(a===b&&d===e&&a!==d){id[r][c+1]=d;id[r+1][c]=a;id[r+1][c+1]=d}
+  }
+  const val={};for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const p=id[r][c];
+    if(!(p in val)){const a=rnd(G.lv);val[p]=a;G.board[r][c]=a}
+    else G.board[r][c]=10-val[p]}
+}
+function partnerOf(r,c){
+  const v=G.board[r][c];if(!v)return null;const {cols,rows}=G;
+  const off=diagOn()?[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]]:[[-1,0],[1,0],[0,-1],[0,1]];
+  for(const [dy,dx] of off){const r2=r+dy,c2=c+dx;if(r2<0||r2>=rows||c2<0||c2>=cols)continue;
+    if(G.board[r2][c2]===10-v)return [r2,c2]}
+  return null;
+}
+function orphanNear(r,c,skip){
+  const {cols,rows}=G;const off=diagOn()?[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]]:[[-1,0],[1,0],[0,-1],[0,1]];
+  for(const [dy,dx] of off){const r2=r+dy,c2=c+dx;if(r2<0||r2>=rows||c2<0||c2>=cols)continue;
+    if(skip&&skip[0]===r2&&skip[1]===c2)continue;
+    if(G.board[r2][c2]&&!partnerOf(r2,c2))return [r2,c2]}
+  return null;
+}
+function refillPair(p1,p2){
+  const o1=orphanNear(p1[0],p1[1],p2),o2=orphanNear(p2[0],p2[1],p1);
+  if(o1&&o2){G.board[p1[0]][p1[1]]=10-G.board[o1[0]][o1[1]];G.board[p2[0]][p2[1]]=10-G.board[o2[0]][o2[1]]}
+  else if(o1){const v=10-G.board[o1[0]][o1[1]];G.board[p1[0]][p1[1]]=v;G.board[p2[0]][p2[1]]=10-v}
+  else if(o2){const v=10-G.board[o2[0]][o2[1]];G.board[p2[0]][p2[1]]=v;G.board[p1[0]][p1[1]]=10-v}
+  else{const a=rnd(G.lv);G.board[p1[0]][p1[1]]=a;G.board[p2[0]][p2[1]]=10-a}
+  const {cols,rows}=G;for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(G.board[r][c]&&!partnerOf(r,c)){pairFill();return}
+}
 function newBoard(){
   const {cols,rows}=G;G.board=[];
-  for(let r=0;r<rows;r++){G.board[r]=[];for(let c=0;c<cols;c++)G.board[r][c]=smartNum(r,c)}
-  if(countMoves()===0)shuffle(false);
+  for(let r=0;r<rows;r++){G.board[r]=[];for(let c=0;c<cols;c++)G.board[r][c]=0}
+  if(calm())pairFill();
+  else{for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)G.board[r][c]=smartNum(r,c);if(countMoves()===0)shuffle(false)}
   const g=$('grid');g.style.gridTemplateColumns=`repeat(${cols},1fr)`;drawBoard();fitGrid();
 }
-function smartNum(r,c){ if(!needAdj())return rnd(G.lv); // 數感／親子：單純隨機
+function smartNum(r,c){ // 60% 機率與鄰居湊 10（5+5 除外）
   const off=diagOn()?[[-1,0],[0,-1],[-1,-1],[-1,1]]:[[-1,0],[0,-1]];
   const nb=off.map(([dy,dx])=>G.board[r+dy]&&G.board[r+dy][c+dx]).filter(v=>v&&v!==5);
   if(nb.length&&Math.random()<.6){const v=10-nb[Math.floor(Math.random()*nb.length)];if(v!==5||fiveCount()<fiveCap())return v}
   return rnd(G.lv);
 }
-function safeNum(r,c){ if(!needAdj())return rnd(G.lv); // 數感／親子：不需避開鄰居
+function safeNum(r,c){ // 補進的寶石不與鄰居湊 10
   const off=diagOn()?[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]]:[[-1,0],[1,0],[0,-1],[0,1]];
   const nb=off.map(([dy,dx])=>G.board[r+dy]&&G.board[r+dy][c+dx]).filter(v=>v);
   const bad=new Set(nb.map(v=>10-v));
@@ -758,13 +794,6 @@ function drawBoard(){
 const tileAt=(r,c)=>$('grid').children[r*G.cols+c];
 function countMoves(list){
   const {cols,rows}=G;let n=0;const dg=diagOn();
-  if(!needAdj()){ // 數感／親子：任兩顆都能配
-    const pos={};for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const v=G.board[r][c];if(v)(pos[v]=pos[v]||[]).push([r,c])}
-    for(let a=1;a<=5;a++){const b=10-a,A=pos[a]||[],B=pos[b]||[];
-      if(a===b){for(let i=0;i+1<A.length;i+=2){n++;if(list)list.push([A[i][0],A[i][1],A[i+1][0],A[i+1][1]])}}
-      else{const m=Math.min(A.length,B.length);for(let i=0;i<m;i++){n++;if(list)list.push([A[i][0],A[i][1],B[i][0],B[i][1]])}}}
-    return n;
-  }
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const v=G.board[r][c];if(!v)continue;
     const D=dg?[[0,1],[1,0],[1,1],[1,-1]]:[[0,1],[1,0]];
     for(const [dr,dc] of D){const r2=r+dr,c2=c+dc;if(r2<0||r2>=rows||c2<0||c2>=cols)continue;
@@ -863,7 +892,8 @@ function eliminate(r1,c1,r2,c2){
   const am2=store.get('angel')||'veryoften';
   if(G.combo===3||(am2==='always'&&G.combo===2)||(am2==='veryoften'&&G.combo===2))angel('combo');
   setTimeout(()=>{
-    G.board[r1][c1]=0;G.board[r2][c2]=0;gravity();
+    G.board[r1][c1]=0;G.board[r2][c2]=0;
+    if(calm()){refillPair([r1,c1],[r2,c2]);drawBoard();GL.rebuildSoon()}else gravity();
     G.busy=false;
     if(G.cleared>=G.lv.target){win();return}
     if(countMoves()===0)shuffle();
