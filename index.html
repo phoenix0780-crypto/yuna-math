@@ -196,7 +196,7 @@ body.webgl .tile.sel{box-shadow:none}
 .drawer > .inner{overflow:hidden;min-height:0}
 .drawer.open{grid-template-rows:1fr;margin-bottom:16px}
 .drawer.open > .inner{padding:8px}
-.players{display:flex;gap:8px;justify-content:center;margin:4px 0 6px;flex-wrap:wrap}
+.players{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 8px;justify-items:center;margin:4px 0 6px;width:100%;max-width:400px}
 .pl{display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;color:var(--cream);font-size:14px;font-weight:700;opacity:.5;padding:4px;max-width:76px}
 .pl small{font-size:10px}
 .pl .face{width:56px;height:56px;font-size:30px}
@@ -353,7 +353,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.30';
+const VERSION='v3.31';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -384,7 +384,7 @@ function faceHTML(id){return ROLES.find(x=>x.id===id).emoji}
 function renderFace(el,id){el.innerHTML=faceHTML(id)}
 
 /* ====== 玩家與排行榜 ====== */
-const PLAYERS=[{id:'princess',name:'Yuna'},{id:'monster',name:'Bryson'},{id:'angel',name:'媽媽'},{id:'boss',name:'爸爸'},{id:'guest',name:'其他人'},{id:'turtle',name:'李宥穎'},{id:'princess2',name:'李亞恩'},{id:'robot',name:'蕭阿伯'}];
+const PLAYERS=[{id:'princess',name:'Yuna'},{id:'monster',name:'Bryson'},{id:'angel',name:'媽媽'},{id:'boss',name:'爸爸'},{id:'turtle',name:'李宥穎'},{id:'princess2',name:'李亞恩'},{id:'robot',name:'蕭阿伯'},{id:'guest',name:'其他人'}];
 function playerName(id){return id==='guest'?(store.get('guestName')||'其他人'):(PLAYERS.find(p=>p.id===id)||PLAYERS[0]).name}
 function curPlayer(){return store.get('player')||'princess'}
 function togglePicker(){const p=$('picker'),d=$('drawer');const on=!d.classList.contains('open');d.classList.toggle('open',on);p.classList.toggle('open',on);p.classList.remove('hint');store.set('pickedOnce','1');
