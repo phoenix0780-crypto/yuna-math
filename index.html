@@ -203,12 +203,12 @@ body.webgl .tile.drop{animation:none}
 .tfslot > *.off{opacity:.3;pointer-events:none}
 .tframe{display:grid;grid-template-columns:repeat(10,var(--dot));gap:var(--dgap);padding:5px;background:rgba(255,255,255,.10);border:2px solid rgba(255,255,255,.45);border-radius:12px;justify-content:center}
 .tframe span{width:var(--dot);height:var(--dot);border-radius:50%;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);transition:background .15s,transform .15s}
-.tframe span.a{background:#ffdd33;border-color:#ffdd33;box-shadow:0 0 8px #ffdd33}
-.tframe span.b{background:#33ccff;border-color:#33ccff;box-shadow:0 0 10px #33ccff}
+.tframe span.a{background:var(--ca);border-color:var(--ca);box-shadow:0 0 8px var(--ca)}
+.tframe span.b{background:var(--cb);border-color:var(--cb);box-shadow:0 0 10px var(--cb)}
 .tframe span.pop{transform:scale(1.3)}
 .over{display:grid;grid-template-columns:repeat(8,var(--dot));gap:var(--dgap);padding:5px 7px;justify-content:center}
 .over i{width:var(--dot);height:var(--dot);border-radius:50%;background:rgba(255,255,255,.08);border:1px dashed rgba(255,255,255,.20)}
-.over i.o{background:#33ccff;border-color:#33ccff;box-shadow:0 0 10px #33ccff;animation:overpop .25s}
+.over i.o{background:var(--cb);border-color:var(--cb);box-shadow:0 0 10px var(--cb);animation:overpop .25s}
 .tile .num{position:relative;z-index:2}
 .tile .dots{position:absolute;left:0;right:0;bottom:6%;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;width:56%;margin:0 auto;z-index:2;pointer-events:none}
 .tile .dots i{aspect-ratio:1;border-radius:50%;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.3)}
@@ -333,7 +333,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.19';
+const VERSION='v3.20';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -397,7 +397,8 @@ const calm=()=>G&&G.mode!=='adventure';
 function tfMsg(t){$('tfmsg').textContent=t}
 let frameTok=0;
 function frameCells(){const f=$('tframe');if(f.children.length!==10){f.innerHTML='';for(let i=0;i<10;i++)f.appendChild(document.createElement('span'))}return f.children}
-function frameSet(a,b){const c=frameCells();for(let i=0;i<10;i++)c[i].className=i<a?'a':(i<a+b?'b':'');
+function dotColor(v){return v?getComputedStyle(document.documentElement).getPropertyValue('--c'+v).trim()||'#fff':'#fff'}
+function frameSet(a,b,va,vb){const sl=$('tfslot');if(va)sl.style.setProperty('--ca',dotColor(va));if(vb)sl.style.setProperty('--cb',dotColor(vb));const c=frameCells();for(let i=0;i<10;i++)c[i].className=i<a?'a':(i<a+b?'b':'');
   const ov=$('over'),n=Math.max(0,a+b-10);
   if(ov.children.length!==8){ov.innerHTML='';for(let i=0;i<8;i++)ov.appendChild(document.createElement('i'))}
   for(let i=0;i<8;i++)ov.children[i].className=i<n?'o':'';}
@@ -802,8 +803,8 @@ function tap(r,c){
   if(G.busy||G.over||!G.board[r][c])return;
   G.idle=0;
   if(!G.sel){G.sel=[r,c];tileAt(r,c).classList.add('sel');GL.select(r,c,true);beep(440,.05);
-    if(G.mode==='practice'){const v=G.board[r][c];frameSet(v,0);tfMsg(`${v} 還差幾才到 10？`)}
-    else if(G.mode==='duo'){G.poseVal=G.board[r][c];G.phase='answer';frameSet(G.board[r][c],0);renderDuo();tfMsg(duoPrompt())}
+    if(G.mode==='practice'){const v=G.board[r][c];frameSet(v,0,v,v);tfMsg(`${v} 還差幾才到 10？`)}
+    else if(G.mode==='duo'){G.poseVal=G.board[r][c];G.phase='answer';frameSet(G.board[r][c],0,G.board[r][c],G.board[r][c]);renderDuo();tfMsg(duoPrompt())}
     else if(G.lv.hint)$('diff').textContent=`還差 ${10-G.board[r][c]}`;
     return}
   const [sr,sc]=G.sel;
@@ -814,7 +815,7 @@ function tap(r,c){
   if(adjacent&&a+b===10){clearSel();if(G.mode==='duo'){G.dscore[1-G.turn]++;G.turn=1-G.turn;G.phase='pose';renderDuo()}eliminate(sr,sc,r,c);}
   else if(calm()){ // 練習／親子：不懲罰，說明原因
     sfx.bad();[tileAt(sr,sc),tileAt(r,c)].forEach(t=>{t.classList.add('bad');setTimeout(()=>t.classList.remove('bad'),400)});
-    if(adjacent){noteWrong(a,b);frameSet(a,b);setTimeout(()=>{if(G&&!G.over&&G.sel)frameSet(a,0)},1800);tfMsg(`${a} + ${b} = ${a+b}，${a+b<10?`還差 ${10-(a+b)} 才到 10`:`多了 ${a+b-10}`}`);setTimeout(()=>{if(G&&!G.over&&G.sel)tfMsg(G.mode==='duo'?duoPrompt():`再找一顆跟 ${a} 湊 10 的`)},2200)}
+    if(adjacent){noteWrong(a,b);frameSet(a,b,a,b);setTimeout(()=>{if(G&&!G.over&&G.sel)frameSet(a,0,a,a)},1800);tfMsg(`${a} + ${b} = ${a+b}，${a+b<10?`還差 ${10-(a+b)} 才到 10`:`多了 ${a+b-10}`}`);setTimeout(()=>{if(G&&!G.over&&G.sel)tfMsg(G.mode==='duo'?duoPrompt():`再找一顆跟 ${a} 湊 10 的`)},2200)}
     else tfMsg('要選旁邊的寶石喔');
     G.wrong++;if(G.mode==='duo'){G.turn=1-G.turn;G.phase='pose';renderDuo();clearSel();setTimeout(()=>{if(G&&!G.over)tfMsg(duoPrompt())},2200)}
   }
@@ -871,7 +872,7 @@ function eliminate(r1,c1,r2,c2){
   G.busy=true;const now=Date.now();
   G.combo=(now-G.lastClear<5000)?G.combo+1:1;G.lastClear=now;
   const t1=tileAt(r1,c1),t2=tileAt(r2,c2);t1.classList.add('pop');t2.classList.add('pop');GL.pop(r1,c1);GL.pop(r2,c2);
-  fx(t1,'10!');shatter(t1);shatter(t2);sfx.shatter();if(calm()){const va=G.board[r1][c1],vb=G.board[r2][c2];showFrame(va,vb);if(G.mode==='practice'&&G.cleared%3===0)angel('eq',va,vb)}vib(G.combo>=2?[40,30,40,30,60]:40);shake(G.combo>=2);
+  fx(t1,'10!');shatter(t1);shatter(t2);sfx.shatter();if(calm()){const va=G.board[r1][c1],vb=G.board[r2][c2];frameSet(0,0,va,vb);showFrame(va,vb);if(G.mode==='practice'&&G.cleared%3===0)angel('eq',va,vb)}vib(G.combo>=2?[40,30,40,30,60]:40);shake(G.combo>=2);
   if(G.combo>=2){sfx.combo();$('hud-combo').textContent=`🔥 連擊 x${G.combo}`;}else{sfx.ok();$('hud-combo').textContent=''}
   G.cleared++;$('hud-cleared').textContent=G.cleared;addPts(10+(G.combo>=2?5*Math.min(G.combo,10):0));
   const push=G.combo>=2?3:2;if(!calm())moveMonster(-push,'hit');
