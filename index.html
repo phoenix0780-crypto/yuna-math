@@ -341,7 +341,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.21';
+const VERSION='v3.22';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -395,7 +395,7 @@ function renderBoard(){const f=$('lb-level').value,box=$('lb');let b=getBoard();
     box.innerHTML+=`<div class="row${me?' me':''}"><span class="rk">${i+1}</span><div class="face">${faceHTML(p.id)}</div><span>${nm}<br><small style="opacity:.7">${LEVELS[e.level-1].name} · ${({practice:'數感',duo:'親子'})[e.mode]||'冒險'} · ${e.date}</small></span><span style="color:#ffd166;font-size:13px">${e.result==='win'||!e.result?('★'.repeat(e.stars)||'過關'):(e.result==='lose'?'😱 被抓':'🚪 中離')}</span><span class="sc">${e.score}</span></div>`})}
 function clearBoard(){if(!confirm('確定清除所有排行榜紀錄？'))return;store.del('board');renderBoard();toast('已清除')}
 /* ====== 遊戲模式 ====== */
-const MODES=[{id:'practice',name:'🌱 數感',hint:'小一以上｜沒有暴龍，先想「還差幾」再找寶石，錯了會教你'},{id:'adventure',name:'🦖 冒險',hint:'小三以上｜暴龍會追公主，消得越快牠退越遠'},{id:'duo',name:'👫 親子',hint:'兩人輪流：一人點一顆出題，另一人找出湊 10 的搭檔'}];
+const MODES=[{id:'practice',name:'🌱 數感',hint:'建議國小一年級以上適合｜沒有暴龍，先想「還差幾」再找寶石，錯了會教你'},{id:'adventure',name:'🦖 冒險',hint:'建議國小三年級以上適合｜暴龍會追公主，消得越快牠退越遠'},{id:'duo',name:'👫 親子',hint:'兩人輪流：一人點一顆出題，另一人找出湊 10 的搭檔'}];
 function curMode(){return store.get('mode')||'practice'}
 function renderModes(){const b=$('modes');b.innerHTML='';MODES.forEach(m=>{const d=document.createElement('button');d.className=curMode()===m.id?'on':'';d.textContent=m.name;d.onclick=()=>{store.set('mode',m.id);renderModes()};b.appendChild(d)});
   $('modehint').textContent=MODES.find(m=>m.id===curMode()).hint;$('duo-pick').style.display=curMode()==='duo'?'':'none';if(curMode()==='duo'){renderPlayers2();$('drawer').classList.add('open');$('picker').classList.add('open')}renderPicker()}
@@ -524,8 +524,11 @@ function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.re
 function goTitle(){if(G&&!G.over)recordRun('quit');stopGame();document.body.classList.remove('danger');loadProgress();renderLevels();renderPlayers();renderModes();renderPicker();show('s-title')}
 function renderLevels(){
   const last=+store.get(lastKey());const bc=$('btn-continue');if(store.get(lastKey())!==null&&last>=0){bc.style.display='';bc.textContent=`▶ 繼續 ${LEVELS[last].name}`}else bc.style.display='none';
-  const fresh=!store.get(lastKey())&&progress.unlocked<=1&&!Object.keys(progress.stars).length;
-  $('guidetip').style.display=fresh?'':'none';
+  const lastL=store.get(lastKey())!==null?+store.get(lastKey()):-1;
+  const fresh=lastL<0&&progress.unlocked<=1&&!Object.keys(progress.stars).length;
+  const guideIdx=fresh?0:(lastL>=0&&lastL<LEVELS.length?lastL:-1);
+  $('guidetip').style.display=guideIdx>=0?'':'none';
+  $('guidetip').textContent=fresh?'👆 按「第一關」開始玩！':`👆 上次玩到${LEVELS[guideIdx>=0?guideIdx:0].name}`;
   const box=$('levels');box.innerHTML='';
   LEVELS.forEach((lv,i)=>{
     const n=i+1,locked=n>progress.unlocked&&store.get('dev')!=='on' /* DEV-UNLOCK */,st=progress.stars[n]||0;
@@ -534,7 +537,7 @@ function renderLevels(){
     b.innerHTML=lv.boss?`👑<small>大魔王</small>`:`<span style="font-size:15px;line-height:1.1">${lv.name}</span><small>${lv.target} 對</small>`;
     if(st)b.innerHTML+=`<span class="stars">${'★'.repeat(st)}</span>`;
     if(!locked)b.onclick=()=>startLevel(i);
-    if(i===0&&fresh)b.classList.add('guide');
+    if(i===guideIdx&&!locked)b.classList.add('guide');
     box.appendChild(b);
   });
 }
@@ -547,7 +550,8 @@ function startLevel(i){
   G={i,lv,mode:cm,cols:sz.cols,rows:sz.rows,board:[],sel:null,wrongPairs:{},cleared:0,mpos:0,timer:null,idle:0,lastClear:0,combo:0,hits:0,energy:0,busy:false,over:false,wrong:0,angelCount:0,score:0,start:Date.now()};
   $('hud-level').textContent=lv.name;$('hud-target').textContent=lv.target;$('hud-cleared').textContent=0;$('hud-combo').textContent='';$('hud-score').textContent=0;
   $('mute').textContent=muted?'🔇 靜音':'🔊 聲音';
-  renderFace($('princess-face'),'princess');renderFace($('monster-face'),lv.boss?'boss':'monster');renderFace($('angel-face'),'angel');
+  renderFace($('princess-face'),curPlayer());renderFace($('monster-face'),lv.boss?'boss':'monster');renderFace($('angel-face'),'angel');
+  $('princess').querySelector('.tag').textContent=playerName(curPlayer());
   $('monster').classList.toggle('boss',!!lv.boss);$('monster-tag').textContent=lv.boss?'爸爸大魔王':'Bryson';$('m-crown').style.display=lv.boss?'':'none';
   $('overlay').classList.remove('on');$('angel').classList.remove('on');document.body.classList.remove('danger');
   $('s-game').classList.toggle('calm',G.mode!=='adventure');$('s-game').classList.toggle('duomode',G.mode==='duo');$('tframe').classList.add('off');$('duoscore').style.display='none';
