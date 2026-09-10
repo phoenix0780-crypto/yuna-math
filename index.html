@@ -26,8 +26,17 @@ body{background:#07040f}
   radial-gradient(ellipse 60% 35% at 80% 20%,rgba(40,120,220,.12),transparent 70%),
   radial-gradient(ellipse 90% 30% at 50% 60%,rgba(200,90,160,.08),transparent 70%),
   linear-gradient(180deg,#0c0620,#070412 60%,#03020a)}
+body.home #space{background:
+  radial-gradient(ellipse 70% 40% at 20% 28%,rgba(150,90,240,.42),transparent 68%),
+  radial-gradient(ellipse 60% 35% at 82% 18%,rgba(50,150,255,.34),transparent 68%),
+  radial-gradient(ellipse 90% 32% at 50% 62%,rgba(255,110,190,.22),transparent 70%),
+  linear-gradient(180deg,#1a0f3c,#0d0824 60%,#05030f)}
+body.home #stars{opacity:.95;animation-duration:4s}
+body.home #earth{opacity:.85;box-shadow:0 0 90px 26px rgba(110,180,255,.35),inset -30px -30px 80px rgba(0,0,0,.55)}
 #stars{position:absolute;inset:0;background-image:radial-gradient(1.2px 1.2px at 20px 30px,#fff,transparent),radial-gradient(1px 1px at 90px 80px,#cfe6ff,transparent),radial-gradient(1.5px 1.5px at 160px 40px,#fff,transparent),radial-gradient(1px 1px at 230px 120px,#ffe9c9,transparent),radial-gradient(1px 1px at 60px 170px,#fff,transparent),radial-gradient(1.3px 1.3px at 200px 200px,#cfe6ff,transparent),radial-gradient(1px 1px at 130px 240px,#fff,transparent),radial-gradient(.8px .8px at 40px 100px,#fff,transparent),radial-gradient(.8px .8px at 250px 60px,#fff,transparent);background-size:280px 280px;opacity:.4;animation:twinkle 6s ease-in-out infinite alternate}
 @keyframes twinkle{to{opacity:.65}}
+#stars2{position:absolute;inset:0;display:none;background-image:radial-gradient(2px 2px at 40px 60px,#fff,transparent),radial-gradient(2.4px 2.4px at 180px 150px,#ffe9c9,transparent),radial-gradient(2px 2px at 300px 40px,#cfe6ff,transparent),radial-gradient(1.8px 1.8px at 110px 260px,#fff,transparent),radial-gradient(2.2px 2.2px at 260px 220px,#fff,transparent);background-size:360px 320px;opacity:.9;animation:twinkle 3s ease-in-out infinite alternate-reverse}
+body.home #stars2{display:block}
 #earth{position:absolute;left:50%;bottom:-62vw;width:130vw;height:130vw;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle at 45% 35%,#3f8fd9 0,#1f5fa8 30%,#123a70 60%,#0a2246 100%);box-shadow:0 0 60px 20px rgba(90,160,255,.15),inset -30px -30px 80px rgba(0,0,0,.7);opacity:.35}
 #earth::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(ellipse 22% 14% at 38% 30%,rgba(120,200,120,.55),transparent 70%),radial-gradient(ellipse 18% 24% at 62% 42%,rgba(110,190,110,.5),transparent 70%),radial-gradient(ellipse 30% 10% at 50% 22%,rgba(255,255,255,.35),transparent 70%);filter:blur(2px)}
 @media (min-aspect-ratio:1/1){#earth{width:110vh;height:110vh;bottom:-55vh}}
@@ -256,7 +265,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </head>
 <body>
 
-<div id="space"><div id="stars"></div><div id="earth"></div></div>
+<div id="space"><div id="stars"></div><div id="stars2"></div><div id="earth"></div></div>
 
 <!-- 標題頁 -->
 <div class="screen on" id="s-title">
@@ -344,7 +353,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.28';
+const VERSION='v3.29';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -536,7 +545,7 @@ const BGM=(()=>{
 
 /* ====== 畫面切換 ====== */
 const $=id=>document.getElementById(id);
-function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');$('gear').classList.toggle('hide',id!=='s-title')}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');$('gear').classList.toggle('hide',id!=='s-title');document.body.classList.toggle('home',id!=='s-game')}
 function goTitle(){if(G&&!G.over)recordRun('quit');stopGame();document.body.classList.remove('danger');loadProgress();renderLevels();renderPlayers();renderModes();renderPicker();show('s-title')}
 function renderLevels(){
   const lastL=store.get(lastKey())!==null?+store.get(lastKey()):-1;
@@ -1102,7 +1111,7 @@ function previewSfx(){sfx.shatter();vib(40)}
 
 
 $('lb-level').onchange=renderBoard;
-loadProgress();renderLevels();renderPlayers();renderModes();renderPicker();
+document.body.classList.add('home');loadProgress();renderLevels();renderPlayers();renderModes();renderPicker();
 </script>
 </body>
 </html>
