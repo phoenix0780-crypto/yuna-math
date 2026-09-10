@@ -203,9 +203,11 @@ body.webgl .tile.drop{animation:none}
 .tfslot > *.off{opacity:.25;pointer-events:none}
 .ask{min-height:calc(min(clamp(30px,7.6vw,44px),5vh) * 2 + 9px)}
 #s-game.duomode .ask{display:none}
-.framerow{display:flex;align-items:center;gap:6px}
-.over{display:flex;gap:4px;align-items:center}
-.over i{width:calc(min(230px,58vw,34vh) / 5 - 8px);aspect-ratio:1;border-radius:50%;background:#ffb02e;box-shadow:0 0 8px #ffb02e;animation:overpop .25s}
+.framerow{display:flex;align-items:center;gap:6px;justify-content:center;width:100%}
+.over{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;width:calc(min(230px,58vw,34vh)  0.8);padding:5px;border:2px dashed rgba(255,176,46,.5);border-radius:10px;background:rgba(255,176,46,.08)}
+.over.empty{opacity:.25}
+.over i{aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18)}
+.over i.o{background:#ffb02e;border-color:#ffb02e;box-shadow:0 0 8px #ffb02e;animation:overpop .25s}
 @keyframes overpop{from{transform:scale(0)}}
 .tframe{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;width:min(230px,58vw,34vh);padding:5px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.35);border-radius:10px}
 .tframe span{aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.12);transition:background .15s,transform .15s}
@@ -326,6 +328,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
     <label>消除時畫面震動 <select id="opt-shake"><option value="off">關</option><option value="1">輕</option><option value="2">中</option><option value="3">強</option></select></label>
     <label>連擊時畫面震動 <select id="opt-shake2"><option value="on">開</option><option value="off">關</option></select></label>
     <label>手機震動 <select id="opt-vib"><option value="on">開</option><option value="off">關</option></select></label>
+    <label>數感模式先問「還差幾」 <select id="opt-ask"><option value="on">要</option><option value="off">不用，直接點寶石</option></select></label>
     <label>斜的方向也能消 <select id="opt-diag"><option value="on">可以</option><option value="off">不行</option></select></label>
     <label>暴龍速度 <select id="opt-speed"><option value="0.35">更更慢</option><option value="0.5" selected>更慢</option><option value="0.75">慢一點</option><option value="1">普通</option><option value="1.3">快一點</option></select></label>
     <label>鼓勵天使出現 <select id="opt-angel"><option value="always">超級常</option><option value="veryoften" selected>很常</option><option value="often">常常</option><option value="sometimes">偶爾</option><option value="off">關閉</option></select></label>
@@ -338,7 +341,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.13';
+const VERSION='v3.14';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -401,10 +404,13 @@ function renderPlayers2(){const b=$('players2');b.innerHTML='';PLAYERS.filter(p=
 const calm=()=>G&&G.mode!=='adventure';
 function tfMsg(t){$('tfmsg').textContent=t}
 let frameTok=0;
+function askOn(){return (store.get('askOn')||'on')==='on'}
 function frameCells(){const f=$('tframe');if(f.children.length!==10){f.innerHTML='';for(let i=0;i<10;i++)f.appendChild(document.createElement('span'))}return f.children}
 function frameSet(a,b){const c=frameCells();for(let i=0;i<10;i++)c[i].className=i<a?'a':(i<a+b?'b':'');
   const ov=$('over'),n=Math.max(0,a+b-10);
-  if(ov.children.length!==n){ov.innerHTML='';for(let i=0;i<n;i++)ov.appendChild(document.createElement('i'))}}
+  if(ov.children.length!==8){ov.innerHTML='';for(let i=0;i<8;i++)ov.appendChild(document.createElement('i'))}
+  for(let i=0;i<8;i++)ov.children[i].className=i<n?'o':'';
+  ov.classList.toggle('empty',n===0)}
 function frameClear(){frameSet(0,0)}
 function showFrame(a,b){const f=$('tframe'),tok=++frameTok;f.classList.remove('off');$('ask').classList.add('off');const c=frameCells();for(let i=0;i<10;i++)c[i].className='';
   const D=45;
@@ -551,7 +557,7 @@ function startLevel(i){
   $('monster').classList.toggle('boss',!!lv.boss);$('monster-tag').textContent=lv.boss?'爸爸大魔王':'Bryson';$('m-crown').style.display=lv.boss?'':'none';
   $('overlay').classList.remove('on');$('angel').classList.remove('on');document.body.classList.remove('danger');
   $('s-game').classList.toggle('calm',G.mode!=='adventure');$('s-game').classList.toggle('duomode',G.mode==='duo');$('tframe').classList.add('off');$('ask').classList.add('off');$('duoscore').style.display='none';
-  frameClear();$('tframe').classList.remove('off');
+  frameClear();$('tframe').classList.remove('off');$('ask').style.display=(G.mode==='practice'&&askOn())?'':'none';
   if(G.mode==='practice'){const a=$('ask');a.innerHTML='';for(let n=1;n<=9;n++){const b=document.createElement('button');b.textContent=n;a.appendChild(b)}}
   if(G.mode==='duo'){G.duo=[curPlayer(),curPlayer2()];G.dscore=[0,0];G.turn=0;G.phase='pose';renderDuo();tfMsg(duoPrompt())}
   else if(G.mode==='practice')tfMsg('點一顆寶石');
@@ -816,7 +822,7 @@ function tap(r,c){
   G.idle=0;
   if(G.askPending)return; // 練習模式：先回答「還差幾」
   if(!G.sel){G.sel=[r,c];tileAt(r,c).classList.add('sel');GL.select(r,c,true);beep(440,.05);
-    if(G.mode==='practice'){frameSet(G.board[r][c],0);showAsk(G.board[r][c])}
+    if(G.mode==='practice'){frameSet(G.board[r][c],0);if(askOn())showAsk(G.board[r][c]);else{tfMsg(`${G.board[r][c]} 還差幾？點旁邊的寶石試試`);const {cols,rows}=G;for(let rr=0;rr<rows;rr++)for(let cc=0;cc<cols;cc++)if(G.board[rr][cc]===10-G.board[r][c]&&isAdj(rr,cc,r,c))tileAt(rr,cc).classList.add('hint')}}
     else if(G.mode==='duo'){G.poseVal=G.board[r][c];G.phase='answer';frameSet(G.board[r][c],0);renderDuo();tfMsg(duoPrompt())}
     else if(G.lv.hint)$('diff').textContent=`還差 ${10-G.board[r][c]}`;
     return}
@@ -1059,7 +1065,7 @@ let prevScreen='s-title',paused=false;
 function showSettings(){
   prevScreen=document.querySelector('.screen.on').id;
   if(G&&!G.over&&(G.timer||G.cd)){pauseGame();paused=true}
-  $('opt-angel').value=store.get('angel')||'veryoften';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'energymetal';$('opt-gl').value=store.get('gl')||'on';$('opt-pal').value=store.get('pal')||'rainbow';$('opt-speed').value=store.get('speed')||'0.5';$('opt-diag').value=store.get('diag')||'on';$('opt-sfx').value=store.get('clearSfx')||'magic';$('opt-bgm').value=store.get('bgm')||'on';
+  $('opt-angel').value=store.get('angel')||'veryoften';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'energymetal';$('opt-gl').value=store.get('gl')||'on';$('opt-pal').value=store.get('pal')||'rainbow';$('opt-speed').value=store.get('speed')||'0.5';$('opt-diag').value=store.get('diag')||'on';$('opt-ask').value=store.get('askOn')||'on';$('opt-sfx').value=store.get('clearSfx')||'magic';$('opt-bgm').value=store.get('bgm')||'on';
   show('s-settings');
 }
 function closeSettings(){
@@ -1077,6 +1083,7 @@ $('opt-mat').onchange=e=>{store.set('mat',e.target.value);GL.restyle()};
 $('opt-gl').onchange=e=>{store.set('gl',e.target.value);toast('重新整理頁面後生效')};
 $('opt-pal').onchange=e=>{store.set('pal',e.target.value);GL.restyle()};
 $('opt-speed').onchange=e=>store.set('speed',e.target.value);
+$('opt-ask').onchange=e=>store.set('askOn',e.target.value);
 $('opt-diag').onchange=e=>{store.set('diag',e.target.value);if(G&&!G.over&&countMoves()===0)shuffle()};
 function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1600)}
 function resetProgress(){if(!confirm('確定要清除 '+playerName(curPlayer())+' 的星星和關卡進度嗎？（其他人的不受影響）'))return;progress.unlocked=1;progress.stars={};saveProgress();store.del(lastKey());renderLevels();toast('已重置 '+playerName(curPlayer())+' 的進度')}
