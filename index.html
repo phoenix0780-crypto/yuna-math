@@ -355,7 +355,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.35';
+const VERSION='v3.36';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -770,6 +770,29 @@ function pairFill(){
   const val={};for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const p=id[r][c];
     if(!(p in val)){const a=rnd(G.lv);val[p]=a;G.board[r][c]=a}
     else G.board[r][c]=10-val[p]}
+  if(!limitPartners()&&(G.fillTries=(G.fillTries||0)+1)<25)pairFill();else G.fillTries=0;
+}
+const MAXP=2; // 數感／親子：每顆寶石旁邊最多 2 顆可配對
+function nbrs(r,c){const {cols,rows}=G;const off=diagOn()?[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]]:[[-1,0],[1,0],[0,-1],[0,1]];
+  const out=[];for(const [dy,dx] of off){const r2=r+dy,c2=c+dx;if(r2>=0&&r2<rows&&c2>=0&&c2<cols)out.push([r2,c2])}return out}
+function partnerCount(r,c){const v=G.board[r][c];if(!v)return 0;let n=0;for(const [r2,c2] of nbrs(r,c))if(G.board[r2][c2]===10-v)n++;return n}
+function okCell(r,c){const n=partnerCount(r,c);return n>=1&&n<=MAXP}
+function limitPartners(){ // 把「搭檔太多」的情況修掉，維持每顆 1~MAXP 個
+  const {cols,rows}=G;
+  for(let iter=0;iter<300;iter++){
+    let bad=null;for(let r=0;r<rows&&!bad;r++)for(let c=0;c<cols;c++)if(G.board[r][c]&&partnerCount(r,c)>MAXP){bad=[r,c];break}
+    if(!bad)return true;
+    const [r,c]=bad,v=G.board[r][c];
+    const cands=nbrs(r,c).filter(([r2,c2])=>G.board[r2][c2]===10-v).sort(()=>Math.random()-.5);
+    let fixed=false;
+    for(const [r2,c2] of cands){const old=G.board[r2][c2];
+      for(let t=0;t<12&&!fixed;t++){const nv=1+Math.floor(Math.random()*9);if(nv===old||nv===10-v)continue;
+        G.board[r2][c2]=nv;
+        if(okCell(r2,c2)&&nbrs(r2,c2).every(([a,b])=>okCell(a,b)))fixed=true;else G.board[r2][c2]=old}
+      if(fixed)break}
+    if(!fixed)return false;
+  }
+  return false;
 }
 function partnerOf(r,c){
   const v=G.board[r][c];if(!v)return null;const {cols,rows}=G;
@@ -792,6 +815,7 @@ function refillPair(p1,p2){
   else if(o2){const v=10-G.board[o2[0]][o2[1]];G.board[p2[0]][p2[1]]=v;G.board[p1[0]][p1[1]]=10-v}
   else{const a=rnd(G.lv);G.board[p1[0]][p1[1]]=a;G.board[p2[0]][p2[1]]=10-a}
   const {cols,rows}=G;for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(G.board[r][c]&&!partnerOf(r,c)){pairFill();return}
+  if(!limitPartners())pairFill();
 }
 function newBoard(){
   const {cols,rows}=G;G.board=[];
