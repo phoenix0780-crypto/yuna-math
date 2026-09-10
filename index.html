@@ -183,11 +183,14 @@ body.webgl .tile.drop{animation:none}
 #tf{grid-area:track;width:100%;max-width:520px;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px 10px;background:rgba(255,255,255,.09);border:2px solid rgba(255,255,255,.22);border-radius:22px;box-shadow:0 6px 20px rgba(0,0,0,.35)}
 #s-game.calm #tf{display:flex}#s-game.calm .track{display:none}
 .tfmsg{font-size:clamp(22px,6.2vw,34px);line-height:1.25;font-weight:900;color:var(--gold);text-shadow:0 2px 8px #000;text-align:center;min-height:2.5em;display:flex;align-items:center;justify-content:center}
+.tfslot{position:relative;width:100%;display:flex;align-items:center;justify-content:center;min-height:calc(clamp(38px,10vw,56px)  2 + 7px)}
+.tfslot > {position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);transition:opacity .18s}
+.tfslot > .off{opacity:0;pointer-events:none}
 .tframe{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:min(340px,84vw);padding:8px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.35);border-radius:10px}
 .tframe span{aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.12);transition:background .15s,transform .15s}
 .tframe span.a{background:#ff6b6b;box-shadow:0 0 8px #ff6b6b}.tframe span.b{background:#4d96ff;box-shadow:0 0 8px #4d96ff}
 .tframe span.pop{transform:scale(1.3)}
-.ask{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}
+.ask{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;width:min(340px,84vw)}
 .ask button{width:clamp(38px,10vw,56px);height:clamp(38px,10vw,56px);border-radius:14px;background:var(--cream);color:var(--ink);font-size:clamp(20px,6vw,30px);font-weight:900;box-shadow:0 4px 0 #c9b58f}
 .ask button:active{transform:translateY(2px);box-shadow:0 1px 0 #c9b58f}
 .tile .num{position:relative;z-index:2}
@@ -249,7 +252,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
     <span class="goal"><span id="hud-cleared">0</span> / <span id="hud-target">15</span> 對 · <span id="hud-score">0</span> 分</span>
     <span id="hud-combo"></span>
   </div>
-  <div id="tf"><div class="duoscore" id="duoscore" style="display:none"></div><div class="tfmsg" id="tfmsg"></div><div class="tframe" id="tframe" style="display:none"></div><div class="ask" id="ask" style="display:none"></div></div>
+  <div id="tf"><div class="duoscore" id="duoscore" style="display:none"></div><div class="tfmsg" id="tfmsg"></div><div class="tfslot" id="tfslot"><div class="tframe" id="tframe"></div><div class="ask" id="ask"></div></div></div>
   <div class="track">
     <div class="road"></div>
     <div class="castle">🏰</div>
@@ -311,7 +314,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.2';
+const VERSION='v3.3';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -367,14 +370,14 @@ function curPlayer2(){const p=store.get('player2');return (p&&p!==curPlayer())?p
 function renderPlayers2(){const b=$('players2');b.innerHTML='';PLAYERS.filter(p=>p.id!==curPlayer()).forEach(p=>{const d=document.createElement('button');d.className='pl'+(curPlayer2()===p.id?' on':'');d.innerHTML=`<div class="face">${faceHTML(p.id)}</div>${playerName(p.id)}`;d.onclick=()=>{store.set('player2',p.id);renderPlayers2()};b.appendChild(d)})}
 const calm=()=>G&&G.mode!=='adventure';
 function tfMsg(t){$('tfmsg').textContent=t}
-function showFrame(a,b){const f=$('tframe');f.style.display='';f.innerHTML='';for(let i=0;i<10;i++)f.appendChild(document.createElement('span'));const c=f.children;
+function showFrame(a,b){const f=$('tframe');f.classList.remove('off');$('ask').classList.add('off');f.innerHTML='';for(let i=0;i<10;i++)f.appendChild(document.createElement('span'));const c=f.children;
   for(let i=0;i<a;i++)setTimeout(()=>{c[i].className='a pop';setTimeout(()=>c[i].classList.remove('pop'),150);beep(500+i*40,.06)},i*70);
   for(let i=0;i<b;i++)setTimeout(()=>{c[a+i].className='b pop';setTimeout(()=>c[a+i].classList.remove('pop'),150);beep(700+i*40,.06)},a*70+150+i*70);
   setTimeout(()=>{tfMsg(`${a} + ${b} = 10 ✔`)},a*70+b*70+300);
-  setTimeout(()=>{f.style.display='none';if(G&&!G.over)tfMsg(G.mode==='duo'?duoPrompt():'點一顆寶石')},a*70+b*70+2200)}
-function showAsk(v){const a=$('ask');a.style.display='';a.innerHTML='';tfMsg(`${v} 還差幾才到 10？`);G.askPending=true;
+  setTimeout(()=>{f.classList.add('off');if(G&&!G.over)tfMsg(G.mode==='duo'?duoPrompt():'點一顆寶石')},a*70+b*70+2200)}
+function showAsk(v){const a=$('ask');a.classList.remove('off');$('tframe').classList.add('off');a.innerHTML='';tfMsg(`${v} 還差幾才到 10？`);G.askPending=true;
   for(let n=1;n<=9;n++){const b=document.createElement('button');b.textContent=n;b.onclick=()=>answerAsk(v,n);a.appendChild(b)}}
-function hideAsk(){$('ask').style.display='none';G.askPending=false}
+function hideAsk(){$('ask').classList.add('off');G.askPending=false}
 function answerAsk(v,n){if(!G||G.over)return;G.idle=0;
   if(v+n===10){hideAsk();sfx.ok();tfMsg(`對！${v} + ${n} = 10，找 ${n}！`);addPts(5);
     const {cols,rows}=G;for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(G.board[r][c]===n&&isAdj(r,c,G.sel[0],G.sel[1])){const t=tileAt(r,c);t.classList.add('hint')}}
@@ -505,7 +508,8 @@ function startLevel(i){
   renderFace($('princess-face'),'princess');renderFace($('monster-face'),lv.boss?'boss':'monster');renderFace($('angel-face'),'angel');
   $('monster').classList.toggle('boss',!!lv.boss);$('monster-tag').textContent=lv.boss?'爸爸大魔王':'Bryson';$('m-crown').style.display=lv.boss?'':'none';
   $('overlay').classList.remove('on');$('angel').classList.remove('on');document.body.classList.remove('danger');
-  $('s-game').classList.toggle('calm',G.mode!=='adventure');$('tframe').style.display='none';$('ask').style.display='none';$('duoscore').style.display='none';
+  $('s-game').classList.toggle('calm',G.mode!=='adventure');$('tframe').classList.add('off');$('ask').classList.add('off');$('duoscore').style.display='none';
+  if(G.mode==='practice'){const a=$('ask');a.innerHTML='';for(let n=1;n<=9;n++){const b=document.createElement('button');b.textContent=n;a.appendChild(b)}}
   if(G.mode==='duo'){G.duo=[curPlayer(),curPlayer2()];G.dscore=[0,0];G.turn=0;G.phase='pose';renderDuo();tfMsg(duoPrompt())}
   else if(G.mode==='practice')tfMsg('點一顆寶石');
   show('s-game');newBoard();settle();store.set(lastKey(),i);requestWake();$('btn-pause').textContent='⏸ 暫停';
