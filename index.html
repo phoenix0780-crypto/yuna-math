@@ -195,11 +195,12 @@ body.webgl .tile.drop{animation:none}
 .modehint{font-size:13px;opacity:.7;margin:-4px 0 10px;text-align:center}
 #tf{grid-area:track;width:100%;max-width:520px;min-height:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:min(10px,1.2vh);padding:min(12px,1.4vh) 10px;background:rgba(255,255,255,.09);border:2px solid rgba(255,255,255,.22);border-radius:22px;box-shadow:0 6px 20px rgba(0,0,0,.35)}
 #s-game.calm #tf{display:flex}#s-game.calm .track{display:none}
-#s-game.duomode .tfslot{min-height:calc(min(320px,80vw,60vh) / 5 + 14px)}
 .tfmsg{font-size:min(clamp(18px,5.4vw,30px),3.4vh);line-height:1.25;font-weight:900;color:var(--gold);text-shadow:0 2px 8px #000;text-align:center;min-height:2.4em;display:flex;align-items:center;justify-content:center}
-.tfslot{position:relative;width:100%;display:flex;align-items:center;justify-content:center;min-height:calc(min(clamp(34px,9vw,52px),6vh) * 2 + 9px)}
-.tfslot > {position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);transition:opacity .18s}
-.tfslot > .off{opacity:0;pointer-events:none}
+.tfslot{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:min(8px,1vh)}
+.tfslot > *{transition:opacity .18s}
+.tfslot > *.off{opacity:.25;pointer-events:none}
+.ask{min-height:calc(min(clamp(34px,9vw,52px),6vh) * 2 + 9px)}
+#s-game.duomode .ask{display:none}
 .tframe{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;width:min(320px,80vw,60vh);padding:6px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.35);border-radius:10px}
 .tframe span{aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.12);transition:background .15s,transform .15s}
 .tframe span.a{background:#ff6b6b;box-shadow:0 0 8px #ff6b6b}.tframe span.b{background:#4d96ff;box-shadow:0 0 8px #4d96ff}
@@ -331,7 +332,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.8';
+const VERSION='v3.9';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -394,20 +395,23 @@ function renderPlayers2(){const b=$('players2');b.innerHTML='';PLAYERS.filter(p=
 const calm=()=>G&&G.mode!=='adventure';
 function tfMsg(t){$('tfmsg').textContent=t}
 let frameTok=0;
-function showFrame(a,b){const f=$('tframe'),tok=++frameTok;f.classList.remove('off');$('ask').classList.add('off');f.innerHTML='';for(let i=0;i<10;i++)f.appendChild(document.createElement('span'));const c=f.children;
+function frameCells(){const f=$('tframe');if(f.children.length!==10){f.innerHTML='';for(let i=0;i<10;i++)f.appendChild(document.createElement('span'))}return f.children}
+function frameSet(a,b){const c=frameCells();for(let i=0;i<10;i++)c[i].className=i<a?'a':(i<a+b?'b':'')}
+function frameClear(){frameSet(0,0)}
+function showFrame(a,b){const f=$('tframe'),tok=++frameTok;f.classList.remove('off');$('ask').classList.add('off');const c=frameCells();for(let i=0;i<10;i++)c[i].className='';
   const D=45;
   for(let i=0;i<a;i++)setTimeout(()=>{c[i].className='a pop';setTimeout(()=>c[i].classList.remove('pop'),120);beep(500+i*40,.05)},i*D);
   for(let i=0;i<b;i++)setTimeout(()=>{c[a+i].className='b pop';setTimeout(()=>c[a+i].classList.remove('pop'),120);beep(700+i*40,.05)},a*D+100+i*D);
   const live=()=>tok===frameTok&&G&&!G.over&&!G.askPending&&!G.sel; // 玩家已開始下一步就不要蓋掉訊息
   setTimeout(()=>{if(live())tfMsg(`${a} + ${b} = 10 ✔`)},a*D+b*D+200);
-  setTimeout(()=>{if(tok===frameTok)f.classList.add('off');if(live())tfMsg(G.mode==='duo'?duoPrompt():'點一顆寶石')},a*D+b*D+1300)}
-function showAsk(v){const a=$('ask');a.classList.remove('off');$('tframe').classList.add('off');a.innerHTML='';tfMsg(`${v} 還差幾才到 10？`);G.askPending=true;
+  setTimeout(()=>{if(tok===frameTok)frameClear();if(live())tfMsg(G.mode==='duo'?duoPrompt():'點一顆寶石')},a*D+b*D+1300)}
+function showAsk(v){const a=$('ask');a.classList.remove('off');$('tframe').classList.remove('off');a.innerHTML='';tfMsg(`${v} 還差幾才到 10？`);G.askPending=true;
   for(let n=1;n<=9;n++){const b=document.createElement('button');b.textContent=n;b.onclick=()=>answerAsk(v,n);a.appendChild(b)}}
 function hideAsk(){$('ask').classList.add('off');G.askPending=false}
-function answerAsk(v,n){if(!G||G.over)return;G.idle=0;
+function answerAsk(v,n){if(!G||G.over)return;G.idle=0;frameSet(v,Math.min(n,10-v));
   if(v+n===10){hideAsk();sfx.ok();tfMsg(`對！${v} + ${n} = 10，找 ${n}！`);addPts(5);
     const {cols,rows}=G;for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(G.board[r][c]===n&&isAdj(r,c,G.sel[0],G.sel[1])){const t=tileAt(r,c);t.classList.add('hint')}}
-  else{sfx.bad();G.askWrong=(G.askWrong||0)+1;noteWrong(v,n);tfMsg(`${v} + ${n} = ${v+n}，${v+n<10?'太少了':'太多了'}，再想想`);
+  else{sfx.bad();G.askWrong=(G.askWrong||0)+1;noteWrong(v,n);tfMsg(`${v} + ${n} = ${v+n}，${v+n<10?'太少了':'太多了'}，再想想`);setTimeout(()=>{if(G&&!G.over&&G.askPending)frameSet(v,0)},900);
     if(G.askWrong>=2)setTimeout(()=>tfMsg(`提示：${v} 再數 ${10-v} 個就是 10`),1200)}}
 function isAdj(r1,c1,r2,c2){const dr=Math.abs(r1-r2),dc=Math.abs(c1-c2);return diagOn()?(dr<=1&&dc<=1&&dr+dc>0):(dr+dc===1)}
 function noteWrong(a,b){const k=[Math.min(a,b),Math.max(a,b)].join('+');G.wrongPairs=G.wrongPairs||{};G.wrongPairs[k]=(G.wrongPairs[k]||0)+1}
@@ -535,6 +539,7 @@ function startLevel(i){
   $('monster').classList.toggle('boss',!!lv.boss);$('monster-tag').textContent=lv.boss?'爸爸大魔王':'Bryson';$('m-crown').style.display=lv.boss?'':'none';
   $('overlay').classList.remove('on');$('angel').classList.remove('on');document.body.classList.remove('danger');
   $('s-game').classList.toggle('calm',G.mode!=='adventure');$('s-game').classList.toggle('duomode',G.mode==='duo');$('tframe').classList.add('off');$('ask').classList.add('off');$('duoscore').style.display='none';
+  frameClear();$('tframe').classList.remove('off');
   if(G.mode==='practice'){const a=$('ask');a.innerHTML='';for(let n=1;n<=9;n++){const b=document.createElement('button');b.textContent=n;a.appendChild(b)}}
   if(G.mode==='duo'){G.duo=[curPlayer(),curPlayer2()];G.dscore=[0,0];G.turn=0;G.phase='pose';renderDuo();tfMsg(duoPrompt())}
   else if(G.mode==='practice')tfMsg('點一顆寶石');
@@ -761,8 +766,8 @@ function tap(r,c){
   G.idle=0;
   if(G.askPending)return; // 練習模式：先回答「還差幾」
   if(!G.sel){G.sel=[r,c];tileAt(r,c).classList.add('sel');GL.select(r,c,true);beep(440,.05);
-    if(G.mode==='practice')showAsk(G.board[r][c]);
-    else if(G.mode==='duo'){G.poseVal=G.board[r][c];G.phase='answer';renderDuo();tfMsg(duoPrompt())}
+    if(G.mode==='practice'){frameSet(G.board[r][c],0);showAsk(G.board[r][c])}
+    else if(G.mode==='duo'){G.poseVal=G.board[r][c];G.phase='answer';frameSet(G.board[r][c],0);renderDuo();tfMsg(duoPrompt())}
     else if(G.lv.hint)$('diff').textContent=`還差 ${10-G.board[r][c]}`;
     return}
   const [sr,sc]=G.sel;
@@ -797,7 +802,16 @@ function beamTo(x,y){if(!D.active)return;const [ox,oy]=center(tileAt(D.r,D.c)),d
   const b=$('beam');b.classList.add('on');b.style.left=ox+'px';b.style.top=oy+'px';b.style.width=len+'px';b.style.transform=`rotate(${Math.atan2(dy,dx)}rad)`;
   const now=Date.now();if(now-D.lastSpark>40){D.lastSpark=now;spark(x,y)}}
 function endDrag(){D.active=false;$('beam').classList.remove('on')}
-const tileFromPoint=(x,y)=>{const el=document.elementFromPoint(x,y);return el&&el.classList.contains('tile')&&!el.classList.contains('empty')?el:null};
+function tileFromPoint(x,y){
+  const el=document.elementFromPoint(x,y);
+  if(el&&el.classList&&el.classList.contains('tile')&&!el.classList.contains('empty'))return el;
+  if(!G)return null;const g=$('grid'),b=g.getBoundingClientRect();
+  if(x<b.left-14||x>b.right+14||y<b.top-14||y>b.bottom+14)return null;
+  const {cols,rows}=G,gap=4,tw=(b.width-gap*(cols-1))/cols,th=(b.height-gap*(rows-1))/rows;
+  const c=Math.max(0,Math.min(cols-1,Math.round((x-b.left-tw/2)/(tw+gap))));
+  const r=Math.max(0,Math.min(rows-1,Math.round((y-b.top-th/2)/(th+gap))));
+  const t=tileAt(r,c);return t&&!t.classList.contains('empty')?t:null;
+}
 {const g=$('grid');
 g.addEventListener('pointerdown',e=>{
   if(!G||G.busy||G.over)return;const t=tileFromPoint(e.clientX,e.clientY);if(!t)return;
@@ -815,7 +829,7 @@ g.addEventListener('pointermove',e=>{
 const up=e=>{if(!D.active)return;endDrag();if(!D.moved&&D.sameSel)clearSel();};
 g.addEventListener('pointerup',up);g.addEventListener('pointercancel',up);
 document.addEventListener('pointerup',e=>{if(D.active)endDrag()});}
-function clearSel(keepDiff){if(G.sel){tileAt(G.sel[0],G.sel[1]).classList.remove('sel');GL.select(G.sel[0],G.sel[1],false);G.sel=null}document.querySelectorAll('.tile.hint').forEach(t=>t.classList.remove('hint'));if(G.mode==='practice')hideAsk();if(!keepDiff)$('diff').textContent=''}
+function clearSel(keepDiff){if(G.sel){tileAt(G.sel[0],G.sel[1]).classList.remove('sel');GL.select(G.sel[0],G.sel[1],false);G.sel=null}document.querySelectorAll('.tile.hint').forEach(t=>t.classList.remove('hint'));if(G.mode==='practice')hideAsk();if(calm()&&!G.busy)frameClear();if(!keepDiff)$('diff').textContent=''}
 function addPts(n){G.score+=n;$('hud-score').textContent=G.score}
 function eliminate(r1,c1,r2,c2){
   G.busy=true;const now=Date.now();
