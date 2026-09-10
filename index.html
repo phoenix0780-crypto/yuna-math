@@ -163,6 +163,16 @@ body.webgl .tile.drop{animation:none}
 @keyframes cnt{0%{transform:scale(2);opacity:0}30%{transform:scale(1);opacity:1}100%{opacity:0}}
 .tut{max-width:360px;font-size:19px;line-height:1.6;text-align:left}
 .tut b{color:var(--gold)}
+.picker{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.25);color:var(--cream);border-radius:40px;padding:6px 16px 6px 6px;font-size:17px;font-weight:700;margin:2px 0 8px;max-width:92%}
+.picker .face{width:44px;height:44px;font-size:24px;flex:0 0 auto}
+.picker .who{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
+.picker .who small{font-size:11px;opacity:.65;font-weight:500}
+.picker .arrow{margin-left:auto;font-size:13px;opacity:.7;transition:transform .2s}
+.picker.open .arrow{transform:rotate(180deg)}
+.picker.hint{animation:pickerHint 1.6s ease-in-out 3}
+@keyframes pickerHint{0%,100%{box-shadow:0 0 0 0 rgba(255,209,102,0)}50%{box-shadow:0 0 0 6px rgba(255,209,102,.35);border-color:var(--gold)}}
+.drawer{width:100%;max-height:0;overflow:hidden;transition:max-height .28s ease;background:rgba(255,255,255,.06);border-radius:20px}
+.drawer.open{max-height:420px;margin-bottom:10px;padding:6px 8px}
 .players{display:flex;gap:8px;justify-content:center;margin:4px 0 12px;flex-wrap:wrap}
 .pl{display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;color:var(--cream);font-size:14px;font-weight:700;opacity:.5;padding:4px;max-width:76px}
 .pl small{font-size:10px}
@@ -237,9 +247,12 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
   <div class="sub">點或滑動兩顆相鄰（含斜向）寶石，加起來等於 10 就碎掉！</div>
   <div class="modes" id="modes"></div>
   <div class="modehint" id="modehint"></div>
-  <div class="sub" style="margin-bottom:4px">誰在玩？</div>
-  <div class="players" id="players"></div>
-  <div id="duo-pick" style="display:none"><div class="sub" style="margin:0 0 4px">跟誰一起玩？</div><div class="players" id="players2"></div></div>
+  <button class="picker" id="picker" onclick="togglePicker()"></button>
+  <div class="drawer" id="drawer">
+    <div class="sub" style="margin:2px 0 4px">誰在玩？</div>
+    <div class="players" id="players"></div>
+    <div id="duo-pick" style="display:none"><div class="sub" style="margin:6px 0 4px">跟誰一起玩？</div><div class="players" id="players2"></div></div>
+  </div>
   <div class="levels" id="levels"></div>
   <button class="ghost" onclick="showBoard()">🏆 排行榜</button>
   <button class="big" id="btn-continue" onclick="continueLast()" style="display:none">▶ 繼續上次</button>
@@ -315,7 +328,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.4';
+const VERSION='v3.5';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -349,9 +362,14 @@ function renderFace(el,id){el.innerHTML=faceHTML(id)}
 const PLAYERS=[{id:'princess',name:'Yuna'},{id:'monster',name:'Bryson'},{id:'angel',name:'媽媽'},{id:'boss',name:'爸爸'},{id:'guest',name:'其他人'},{id:'turtle',name:'李宥穎'},{id:'princess2',name:'李亞恩'},{id:'robot',name:'蕭阿伯'}];
 function playerName(id){return id==='guest'?(store.get('guestName')||'其他人'):(PLAYERS.find(p=>p.id===id)||PLAYERS[0]).name}
 function curPlayer(){return store.get('player')||'princess'}
+function togglePicker(){const p=$('picker'),d=$('drawer');const on=!d.classList.contains('open');d.classList.toggle('open',on);p.classList.toggle('open',on);p.classList.remove('hint');store.set('pickedOnce','1')}
+function renderPicker(){const p=$('picker');const two=curMode()==='duo';
+  p.innerHTML=`<div class="face">${faceHTML(curPlayer())}</div>`+(two?`<div class="face">${faceHTML(curPlayer2())}</div>`:'')+
+    `<span class="who">${playerName(curPlayer())}${two?' &amp; '+playerName(curPlayer2()):''}<small>${two?'點一下換玩家':'現在是誰在玩？點一下換人'}</small></span><span class="arrow">▼</span>`;
+  if(store.get('pickedOnce')!=='1'){p.classList.add('hint');$('drawer').classList.add('open');p.classList.add('open')}}
 function renderPlayers(){const b=$('players');b.innerHTML='';PLAYERS.forEach(p=>{const on=curPlayer()===p.id;const d=document.createElement('button');d.className='pl'+(on?' on':'');
   d.innerHTML=`<div class="face">${faceHTML(p.id)}</div>${playerName(p.id)}${p.id==='guest'?'<small style="opacity:.7;font-weight:500">✏️ 改名字</small>':''}`;
-  d.onclick=()=>{if(p.id==='guest'&&on){const n=prompt('你叫什麼名字？',store.get('guestName')||'');if(n!==null){const t=n.trim().slice(0,8);t?store.set('guestName',t):store.del('guestName')}}store.set('player',p.id);loadProgress();renderPlayers();renderLevels();if(curMode()==='duo')renderPlayers2()};b.appendChild(d)})}
+  d.onclick=()=>{if(p.id==='guest'&&on){const n=prompt('你叫什麼名字？',store.get('guestName')||'');if(n!==null){const t=n.trim().slice(0,8);t?store.set('guestName',t):store.del('guestName')}}store.set('player',p.id);loadProgress();renderPlayers();renderLevels();renderPicker();if(curMode()==='duo')renderPlayers2()};b.appendChild(d)})}
 function stamp(){const d=new Date();const p=n=>String(n).padStart(2,'0');return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`}
 function getBoard(){try{return JSON.parse(store.get('board')||'[]')}catch(e){return []}}
 function addScore(entry){const b=getBoard();b.push(entry);b.sort((x,y)=>y.score-x.score);store.set('board',JSON.stringify(b.slice(0,50)));return b.findIndex(e=>e===entry)+1}
@@ -366,9 +384,9 @@ function clearBoard(){if(!confirm('確定清除所有排行榜紀錄？'))return
 const MODES=[{id:'practice',name:'🌱 數感',hint:'沒有暴龍，先想「還差幾」再找寶石，錯了會教你'},{id:'adventure',name:'🦖 冒險',hint:'暴龍會追公主，消得越快牠退越遠'},{id:'duo',name:'👫 親子',hint:'兩人輪流：一人點一顆出題，另一人找出湊 10 的搭檔'}];
 function curMode(){return store.get('mode')||'practice'}
 function renderModes(){const b=$('modes');b.innerHTML='';MODES.forEach(m=>{const d=document.createElement('button');d.className=curMode()===m.id?'on':'';d.textContent=m.name;d.onclick=()=>{store.set('mode',m.id);renderModes()};b.appendChild(d)});
-  $('modehint').textContent=MODES.find(m=>m.id===curMode()).hint;$('duo-pick').style.display=curMode()==='duo'?'':'none';if(curMode()==='duo')renderPlayers2()}
+  $('modehint').textContent=MODES.find(m=>m.id===curMode()).hint;$('duo-pick').style.display=curMode()==='duo'?'':'none';if(curMode()==='duo'){renderPlayers2();$('drawer').classList.add('open');$('picker').classList.add('open')}renderPicker()}
 function curPlayer2(){const p=store.get('player2');return (p&&p!==curPlayer())?p:(PLAYERS.find(x=>x.id!==curPlayer()).id)}
-function renderPlayers2(){const b=$('players2');b.innerHTML='';PLAYERS.filter(p=>p.id!==curPlayer()).forEach(p=>{const d=document.createElement('button');d.className='pl'+(curPlayer2()===p.id?' on':'');d.innerHTML=`<div class="face">${faceHTML(p.id)}</div>${playerName(p.id)}`;d.onclick=()=>{store.set('player2',p.id);renderPlayers2()};b.appendChild(d)})}
+function renderPlayers2(){const b=$('players2');b.innerHTML='';PLAYERS.filter(p=>p.id!==curPlayer()).forEach(p=>{const d=document.createElement('button');d.className='pl'+(curPlayer2()===p.id?' on':'');d.innerHTML=`<div class="face">${faceHTML(p.id)}</div>${playerName(p.id)}`;d.onclick=()=>{store.set('player2',p.id);renderPlayers2();renderPicker()};b.appendChild(d)})}
 const calm=()=>G&&G.mode!=='adventure';
 function tfMsg(t){$('tfmsg').textContent=t}
 function showFrame(a,b){const f=$('tframe');f.classList.remove('off');$('ask').classList.add('off');f.innerHTML='';for(let i=0;i<10;i++)f.appendChild(document.createElement('span'));const c=f.children;
@@ -483,7 +501,7 @@ const BGM=(()=>{
 /* ====== 畫面切換 ====== */
 const $=id=>document.getElementById(id);
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');$('gear').classList.toggle('hide',id!=='s-title')}
-function goTitle(){if(G&&!G.over)recordRun('quit');stopGame();document.body.classList.remove('danger');loadProgress();renderLevels();renderPlayers();renderModes();show('s-title')}
+function goTitle(){if(G&&!G.over)recordRun('quit');stopGame();document.body.classList.remove('danger');loadProgress();renderLevels();renderPlayers();renderModes();renderPicker();show('s-title')}
 function renderLevels(){
   const last=+store.get(lastKey());const bc=$('btn-continue');if(store.get(lastKey())!==null&&last>=0){bc.style.display='';bc.textContent=`▶ 繼續 ${LEVELS[last].name}`}else bc.style.display='none';
   const box=$('levels');box.innerHTML='';
@@ -994,7 +1012,7 @@ function previewSfx(){sfx.shatter();vib(40)}
 
 
 $('lb-level').onchange=renderBoard;
-loadProgress();renderLevels();renderPlayers();renderModes();
+loadProgress();renderLevels();renderPlayers();renderModes();renderPicker();
 </script>
 </body>
 </html>
