@@ -332,7 +332,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.15';
+const VERSION='v3.16';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -550,7 +550,7 @@ function countdown(done){let n=3;G.busy=true;G.cd=true;const go=()=>{if(!G||G.ov
 function showTutorial(done){G.busy=true;$('ov-stars').textContent='💎';$('ov-title').textContent='怎麼玩';
   $('ov-text').innerHTML=curMode()==='adventure'
     ?'<div class="tut">1. 點一顆寶石再點<b>旁邊</b>那顆（含<b>斜的</b>），或直接<b>滑過去</b><br>2. 兩個數字<b>加起來 = 10</b> 就會碎掉<br>3. 每碎一對，暴龍就<b>後退</b><br>4. 暴龍抓到 Yuna 就輸了<br>5. 消滿目標數就過關！</div>'
-    :'<div class="tut">1. 先點一顆寶石，圓點會顯示它有多少<br>2. 想想<b>還差幾才到 10</b><br>3. 點<b>旁邊</b>那顆湊得成 10 的（每顆旁邊都一定有搭檔）<br>4. 想不出來時，搭檔會自己閃給你看<br>5. 沒有暴龍，慢慢想沒關係！</div>';
+    :'<div class="tut">1. 先點一顆寶石，圓點會顯示它有多少<br>2. 想想<b>還差幾才到 10</b><br>3. 點<b>旁邊</b>那顆湊得成 10 的（每顆旁邊都一定有搭檔）<br>4. 兩顆一起碎掉，圓點會告訴你怎麼湊成 10<br>5. 沒有暴龍，慢慢想沒關係！</div>';
   $('ov-family').innerHTML='';const b=$('ov-btn');b.textContent='我知道了！';b.onclick=()=>{store.set('tutorialDone','1');$('overlay').classList.remove('on');$('ov-text').textContent='';done()};$('overlay').classList.add('on')}
 function stopGame(){if(G){clearInterval(G.timer);G.over=true;G.timer=null}releaseWake()}
 function pauseGame(){if(!G||G.over)return;if(G.cd){G.cdPaused=true}if(G.timer){clearInterval(G.timer);G.timer=null}$('btn-pause').textContent='▶ 繼續'}
@@ -801,8 +801,7 @@ function tap(r,c){
   if(G.busy||G.over||!G.board[r][c])return;
   G.idle=0;
   if(!G.sel){G.sel=[r,c];tileAt(r,c).classList.add('sel');GL.select(r,c,true);beep(440,.05);
-    if(G.mode==='practice'){const v=G.board[r][c];frameSet(v,0);tfMsg(`${v} 還差幾才到 10？`);
-      G.hintT=setTimeout(()=>{if(G&&!G.over&&G.sel&&G.sel[0]===r&&G.sel[1]===c){highlightPartners(r,c);tfMsg(`${v} + ? = 10，點旁邊閃亮的寶石`)}},2500)}
+    if(G.mode==='practice'){const v=G.board[r][c];frameSet(v,0);tfMsg(`${v} 還差幾才到 10？`)}
     else if(G.mode==='duo'){G.poseVal=G.board[r][c];G.phase='answer';frameSet(G.board[r][c],0);renderDuo();tfMsg(duoPrompt())}
     else if(G.lv.hint)$('diff').textContent=`還差 ${10-G.board[r][c]}`;
     return}
