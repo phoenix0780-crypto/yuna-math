@@ -203,6 +203,10 @@ body.webgl .tile.drop{animation:none}
 .tfslot > *.off{opacity:.25;pointer-events:none}
 .ask{min-height:calc(min(clamp(30px,7.6vw,44px),5vh) * 2 + 9px)}
 #s-game.duomode .ask{display:none}
+.framerow{display:flex;align-items:center;gap:6px}
+.over{display:flex;gap:4px;align-items:center}
+.over i{width:calc(min(230px,58vw,34vh) / 5 - 8px);aspect-ratio:1;border-radius:50%;background:#ffb02e;box-shadow:0 0 8px #ffb02e;animation:overpop .25s}
+@keyframes overpop{from{transform:scale(0)}}
 .tframe{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;width:min(230px,58vw,34vh);padding:5px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.35);border-radius:10px}
 .tframe span{aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.12);transition:background .15s,transform .15s}
 .tframe span.a{background:#ff6b6b;box-shadow:0 0 8px #ff6b6b}.tframe span.b{background:#4d96ff;box-shadow:0 0 8px #4d96ff}
@@ -272,7 +276,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
     <span class="goal"><span id="hud-cleared">0</span> / <span id="hud-target">15</span> 對 · <span id="hud-score">0</span> 分</span>
     <span id="hud-combo"></span>
   </div>
-  <div id="tf"><div class="duoscore" id="duoscore" style="display:none"></div><div class="tfmsg" id="tfmsg"></div><div class="tfslot" id="tfslot"><div class="tframe" id="tframe"></div><div class="ask" id="ask"></div></div></div>
+  <div id="tf"><div class="duoscore" id="duoscore" style="display:none"></div><div class="tfmsg" id="tfmsg"></div><div class="tfslot" id="tfslot"><div class="framerow"><div class="tframe" id="tframe"></div><div class="over" id="over"></div></div><div class="ask" id="ask"></div></div></div>
   <div class="track">
     <div class="road"></div>
     <div class="castle">🏰</div>
@@ -334,7 +338,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.11';
+const VERSION='v3.12';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -398,7 +402,9 @@ const calm=()=>G&&G.mode!=='adventure';
 function tfMsg(t){$('tfmsg').textContent=t}
 let frameTok=0;
 function frameCells(){const f=$('tframe');if(f.children.length!==10){f.innerHTML='';for(let i=0;i<10;i++)f.appendChild(document.createElement('span'))}return f.children}
-function frameSet(a,b){const c=frameCells();for(let i=0;i<10;i++)c[i].className=i<a?'a':(i<a+b?'b':'')}
+function frameSet(a,b){const c=frameCells();for(let i=0;i<10;i++)c[i].className=i<a?'a':(i<a+b?'b':'');
+  const ov=$('over'),n=Math.max(0,a+b-10);
+  if(ov.children.length!==n){ov.innerHTML='';for(let i=0;i<n;i++)ov.appendChild(document.createElement('i'))}}
 function frameClear(){frameSet(0,0)}
 function showFrame(a,b){const f=$('tframe'),tok=++frameTok;f.classList.remove('off');$('ask').classList.add('off');const c=frameCells();for(let i=0;i<10;i++)c[i].className='';
   const D=45;
@@ -410,13 +416,13 @@ function showFrame(a,b){const f=$('tframe'),tok=++frameTok;f.classList.remove('o
 function showAsk(v){const a=$('ask');a.classList.remove('off');$('tframe').classList.remove('off');a.innerHTML='';tfMsg(`${v} 還差幾才到 10？`);G.askPending=true;
   for(let n=1;n<=9;n++){const b=document.createElement('button');b.textContent=n;b.onclick=()=>answerAsk(v,n);a.appendChild(b)}}
 function hideAsk(){$('ask').classList.add('off');G.askPending=false}
-function answerAsk(v,n){if(!G||G.over)return;G.idle=0;frameSet(v,Math.min(n,10-v));
+function answerAsk(v,n){if(!G||G.over)return;G.idle=0;frameSet(v,n);
   if(v+n===10){hideAsk();sfx.ok();addPts(5);
     const {cols,rows}=G;let found=0;
     for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(G.board[r][c]===n&&!(r===G.sel[0]&&c===G.sel[1])&&(!needAdj()||isAdj(r,c,G.sel[0],G.sel[1]))){tileAt(r,c).classList.add('hint');found++}
     tfMsg(`對！${v} + ${n} = 10，點一顆 ${n}！`);
     if(!found){tfMsg(`對！${v} + ${n} = 10，可惜盤面上沒有 ${n} 了，換一顆`);setTimeout(()=>{if(G&&!G.over&&G.sel)clearSel()},1800)}}
-  else{sfx.bad();G.askWrong=(G.askWrong||0)+1;noteWrong(v,n);tfMsg(`${v} + ${n} = ${v+n}，${v+n<10?'太少了':'太多了'}，再想想`);setTimeout(()=>{if(G&&!G.over&&G.askPending)frameSet(v,0)},900);
+  else{sfx.bad();G.askWrong=(G.askWrong||0)+1;noteWrong(v,n);tfMsg(`${v} + ${n} = ${v+n}，${v+n<10?`還差 ${10-(v+n)}`:`超出 ${v+n-10}`}，再想想`);setTimeout(()=>{if(G&&!G.over&&G.askPending)frameSet(v,0)},900);
     if(G.askWrong>=2)setTimeout(()=>tfMsg(`提示：${v} 再數 ${10-v} 個就是 10`),1200)}}
 function needAdj(){return !calm()}
 function isAdj(r1,c1,r2,c2){const dr=Math.abs(r1-r2),dc=Math.abs(c1-c2);return diagOn()?(dr<=1&&dc<=1&&dr+dc>0):(dr+dc===1)}
@@ -793,7 +799,7 @@ function tap(r,c){
   if(adjacent&&a+b===10){clearSel();if(G.mode==='duo'){G.dscore[1-G.turn]++;G.turn=1-G.turn;G.phase='pose';renderDuo()}eliminate(sr,sc,r,c);}
   else if(calm()){ // 練習／親子：不懲罰，說明原因
     sfx.bad();[tileAt(sr,sc),tileAt(r,c)].forEach(t=>{t.classList.add('bad');setTimeout(()=>t.classList.remove('bad'),400)});
-    if(adjacent){noteWrong(a,b);tfMsg(`${a} + ${b} = ${a+b}，${a+b<10?`還差 ${10-(a+b)} 才到 10`:`多了 ${a+b-10}`}`);setTimeout(()=>{if(G&&!G.over&&G.sel)tfMsg(G.mode==='duo'?duoPrompt():`再找一顆跟 ${a} 湊 10 的`)},2200)}
+    if(adjacent){noteWrong(a,b);frameSet(a,b);setTimeout(()=>{if(G&&!G.over&&G.sel)frameSet(a,0)},1800);tfMsg(`${a} + ${b} = ${a+b}，${a+b<10?`還差 ${10-(a+b)} 才到 10`:`多了 ${a+b-10}`}`);setTimeout(()=>{if(G&&!G.over&&G.sel)tfMsg(G.mode==='duo'?duoPrompt():`再找一顆跟 ${a} 湊 10 的`)},2200)}
     else tfMsg('要選旁邊的寶石喔');
     G.wrong++;if(G.mode==='duo'){G.turn=1-G.turn;G.phase='pose';renderDuo();clearSel();setTimeout(()=>{if(G&&!G.over)tfMsg(duoPrompt())},2200)}
   }
