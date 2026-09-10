@@ -202,7 +202,8 @@ body.webgl .tile.sel{box-shadow:none}
 .pl .face{width:56px;height:56px;font-size:30px}
 .pl.on{opacity:1}.pl.on .face{box-shadow:0 0 0 4px var(--gold)}
 .pl.p2{opacity:1}.pl.p2 .face{box-shadow:0 0 0 4px #33ccff}
-.pl .seat{font-size:10px;font-weight:700;color:var(--ink);background:var(--gold);border-radius:8px;padding:0 5px;margin-top:-2px}
+.pl{position:relative}
+.pl .seat{position:absolute;top:-2px;right:2px;width:20px;height:20px;border-radius:50%;background:var(--gold);color:var(--ink);font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--sky);z-index:2}
 .pl.p2 .seat{background:#33ccff}
 .lb{width:100%;max-width:480px;margin:10px 0}
 .lb .row{display:grid;grid-template-columns:32px 44px 1fr 70px 60px;align-items:center;gap:8px;background:rgba(255,255,255,.08);border-radius:14px;padding:6px 10px;margin-bottom:6px;font-size:16px}
@@ -353,7 +354,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v3.31';
+const VERSION='v3.32';
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -399,7 +400,7 @@ function renderPlayers(){const b=$('players');b.innerHTML='';const duo=curMode()
   PLAYERS.forEach(p=>{const s1=curPlayer()===p.id,s2=duo&&curPlayer2()===p.id&&!s1;
     const d=document.createElement('button');d.className='pl'+(s1?' on':'')+(s2?' p2':'');
     d.innerHTML=`<div class="face">${faceHTML(p.id)}</div>${playerName(p.id)}`+
-      (duo&&(s1||s2)?`<span class="seat">${s1?'第一位':'第二位'}</span>`:'')+
+      (duo&&(s1||s2)?`<span class="seat">${s1?'1':'2'}</span>`:'')+
       (p.id==='guest'&&s1?'<small style="opacity:.7;font-weight:500">✏️ 改名字</small>':'');
     d.onclick=()=>{
       if(p.id==='guest'&&s1){const n=prompt('你叫什麼名字？',store.get('guestName')||'');if(n!==null){const t=n.trim().slice(0,8);t?store.set('guestName',t):store.del('guestName')}}
