@@ -201,11 +201,9 @@ body.webgl .tile.sel{box-shadow:none}
 .pl small{font-size:10px}
 .pl .face{width:56px;height:56px;font-size:30px}
 .pl.on{opacity:1}.pl.on .face{box-shadow:0 0 0 4px var(--gold)}
-.pl.p2{opacity:1}.pl.p2 .face{box-shadow:0 0 0 4px #33ccff}
 .pl{position:relative}
 .pl .pen{position:absolute;left:2px;top:-2px;width:20px;height:20px;border-radius:50%;background:var(--cream);font-size:11px;display:flex;align-items:center;justify-content:center;border:2px solid var(--sky);z-index:2}
 .pl .seat{position:absolute;top:-2px;right:2px;width:20px;height:20px;border-radius:50%;background:var(--gold);color:var(--ink);font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--sky);z-index:2}
-.pl.p2 .seat{background:#33ccff}
 .lb{width:100%;max-width:480px;margin:10px 0}
 .lb .row{display:grid;grid-template-columns:32px 44px 1fr 70px 60px;align-items:center;gap:8px;background:rgba(255,255,255,.08);border-radius:14px;padding:6px 10px;margin-bottom:6px;font-size:16px}
 .lb .row.head{background:transparent;opacity:.6;font-size:13px}
@@ -231,15 +229,17 @@ body.webgl .tile.sel{box-shadow:none}
 .tframe span.pop{transform:scale(1.3)}
 .over{display:grid;grid-template-columns:repeat(10,var(--dot));gap:var(--dgap);padding:5px;justify-content:center;border:2px dashed rgba(255,255,255,.18);border-radius:12px}
 .over i{width:var(--dot);height:var(--dot);border-radius:50%;background:rgba(255,255,255,.08);border:1px dashed rgba(255,255,255,.20)}
-.over i.o{background:var(--cb);border-color:var(--cb);box-shadow:0 0 10px var(--cb);animation:overpop .25s}
+.over.goal{border-style:solid;border-color:rgba(255,255,255,.45);background:rgba(255,255,255,.10)}
+.over i.g{border-style:solid;border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.10)}
+.over i.a{background:var(--ca);border-color:var(--ca);box-shadow:0 0 8px var(--ca)}
+.over i.b{background:var(--cb);border-color:var(--cb);box-shadow:0 0 10px var(--cb)}
+.over i.pop{transform:scale(1.3)}
+.tframe span.o,.over i.o{box-shadow:0 0 0 3px var(--danger),0 0 10px var(--cb);animation:overpop .25s}
 .tile .num{position:relative;z-index:2}
 .tile .dots{position:absolute;left:0;right:0;bottom:6%;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;width:56%;margin:0 auto;z-index:2;pointer-events:none}
 .tile .dots i{aspect-ratio:1;border-radius:50%;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.3)}
 .tile .dots i.f{background:#fff;box-shadow:0 0 3px #000}
 body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
-.duoscore{display:flex;gap:16px;font-size:15px;font-weight:700}
-.duoscore .face{width:34px;height:34px;font-size:18px;display:inline-flex;vertical-align:middle;margin-right:4px}
-.duoscore .cur{color:var(--gold)}
 .ver{position:fixed;left:16px;bottom:calc(14px + env(safe-area-inset-bottom) + 15px);font-size:11px;opacity:.45;z-index:25;pointer-events:none;color:#fff}
 .ring{position:fixed;width:20px;height:20px;border-radius:50%;border:4px solid #fff;box-shadow:0 0 16px #fff,inset 0 0 10px #fff;pointer-events:none;z-index:7;transform:translate(-50%,-50%);animation:ring .5s ease-out forwards}
 @keyframes ring{to{width:110px;height:110px;opacity:0;border-width:1px}}
@@ -272,7 +272,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 <!-- 標題頁 -->
 <div class="screen on" id="s-title">
   <h1 style="font-size:clamp(32px,9vw,52px);text-align:center;line-height:1.2">&lt;&lt; 恐怖大怪獸 &gt;&gt;</h1>
-  <div class="sub">兩顆相鄰的寶石加起來等於 10 就消除</div>
+  <div class="sub">兩顆相鄰的寶石加起來等於目標數就消除</div>
   <div class="modes" id="modes"></div>
   <div class="modehint" id="modehint"></div>
   <button class="picker" id="picker" onclick="togglePicker()"></button>
@@ -283,7 +283,8 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
   <div class="levels" id="levels"></div>
   <div class="guidetip" id="guidetip" style="display:none">👆 按「第一關」開始玩！</div>
   <button class="ghost" onclick="showBoard()" style="margin-top:4px;padding:11px 26px">🏆 排行榜</button>
-  
+  <div style="display:flex;gap:10px;justify-content:center;margin:6px 0 14px"><a class="ghost" style="font-size:15px;padding:8px 16px;text-decoration:none" href="https://phoenix0780-crypto.github.io/yuna-math/blocks/">🏝️ 方塊島</a><a class="ghost" style="font-size:15px;padding:8px 16px;text-decoration:none" href="https://phoenix0780-crypto.github.io/yuna-math/space/">☄️ 隕石大作戰</a></div>
+
 </div>
 
 <!-- 遊戲頁 -->
@@ -293,7 +294,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
     <span class="goal"><span id="hud-cleared">0</span> / <span id="hud-target">15</span> 對 · <span id="hud-score">0</span> 分</span>
     <span id="hud-combo"></span>
   </div>
-  <div id="tf"><div class="duoscore" id="duoscore" style="display:none"></div><div class="tfmsg" id="tfmsg"></div><div class="tfslot" id="tfslot"><div class="tframe" id="tframe"></div><div class="over" id="over"></div></div></div>
+  <div id="tf"><div class="tfmsg" id="tfmsg"></div><div class="tfslot" id="tfslot"><div class="tframe" id="tframe"></div><div class="over" id="over"></div></div></div>
   <div class="track">
     <div class="road"></div>
     <div class="castle">🏰</div>
@@ -348,14 +349,17 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
     <label>鼓勵天使出現 <select id="opt-angel"><option value="always">超級常</option><option value="veryoften" selected>很常</option><option value="often">常常</option><option value="sometimes">偶爾</option><option value="off">關閉</option></select></label>
   </div>
   <div class="opts" style="margin-top:14px">
-    <label>測試模式：解鎖全部關卡（DEV-UNLOCK） <select id="opt-dev"><option value="off">關</option><option value="on">開</option></select></label>
-    <div class="opt">重置所有進度 <button class="ghost" style="margin:0;padding:6px 14px;border-color:var(--red);color:var(--red)" onclick="resetProgress()">重置</button></div>
+    <div class="opt">重置目前玩家的進度 <button class="ghost" id="btn-reset" style="margin:0;padding:6px 14px;border-color:var(--red);color:var(--red)" onclick="resetProgress()">重置</button></div>
   </div>
   <button class="big" onclick="closeSettings()" style="margin-top:20px">完成</button>
 </div>
 
 <script>
-const VERSION='v3.36';
+const VERSION='v4.0';
+const DEV=/(^|[?#&])dev(\b|$)/.test(location.search+location.hash);
+function T(){return (G&&G.sum)||10}
+function half(){const t=T();return t%2===0?t/2:0}
+function vrange(){const t=T();return [Math.max(1,t-9),Math.min(9,t-1)]}
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -391,24 +395,16 @@ function playerName(id){return id==='guest'?(store.get('guestName')||'其他人'
 function curPlayer(){return store.get('player')||'princess'}
 function togglePicker(){const p=$('picker'),d=$('drawer');const on=!d.classList.contains('open');d.classList.toggle('open',on);p.classList.toggle('open',on);p.classList.remove('hint');store.set('pickedOnce','1');
   if(on)setTimeout(()=>{try{d.scrollIntoView({behavior:'smooth',block:'nearest'})}catch(e){}},320)}
-function renderPicker(){const p=$('picker');const two=curMode()==='duo';
-  p.innerHTML=`<div class="face">${faceHTML(curPlayer())}</div>`+(two?`<div class="face">${faceHTML(curPlayer2())}</div>`:'')+
-    `<span class="who">${playerName(curPlayer())}${two?' &amp; '+playerName(curPlayer2()):''}<small>${two?'點一下換玩家':'現在是誰在玩？點一下換人'}</small></span><span class="arrow">▼</span>`;
+function renderPicker(){const p=$('picker');
+  p.innerHTML=`<div class="face">${faceHTML(curPlayer())}</div><span class="who">${playerName(curPlayer())}<small>現在是誰在玩？點一下換人</small></span><span class="arrow">▼</span>`;
   if(store.get('pickedOnce')!=='1'){p.classList.add('hint');$('drawer').classList.add('open');p.classList.add('open')}}
-let pickSeat=1;
-function renderPlayers(){const b=$('players');b.innerHTML='';const duo=curMode()==='duo';
-  $('pickhint').textContent=duo?(pickSeat===1?'👆 先點「第一位」玩家':'👆 再點「第二位」玩家'):'誰在玩？';
-  PLAYERS.forEach(p=>{const s1=curPlayer()===p.id,s2=duo&&curPlayer2()===p.id&&!s1;
-    const d=document.createElement('button');d.className='pl'+(s1?' on':'')+(s2?' p2':'');
-    d.innerHTML=`<div class="face">${faceHTML(p.id)}</div>${playerName(p.id)}`+
-      (duo&&(s1||s2)?`<span class="seat">${s1?'1':'2'}</span>`:'')+
-      (p.id==='guest'&&s1?'<span class="pen">✏️</span>':'');
+function renderPlayers(){const b=$('players');b.innerHTML='';
+  PLAYERS.forEach(p=>{const s1=curPlayer()===p.id;
+    const d=document.createElement('button');d.className='pl'+(s1?' on':'');
+    d.innerHTML=`<div class="face">${faceHTML(p.id)}</div>${playerName(p.id)}`+(p.id==='guest'&&s1?'<span class="pen">✏️</span>':'');
     d.onclick=()=>{
       if(p.id==='guest'&&s1){const n=prompt('你叫什麼名字？',store.get('guestName')||'');if(n!==null){const t=n.trim().slice(0,8);t?store.set('guestName',t):store.del('guestName')}}
-      if(duo){
-        if(pickSeat===1){if(curPlayer2()===p.id)store.set('player2',curPlayer());store.set('player',p.id);loadProgress();pickSeat=2}
-        else{if(p.id!==curPlayer())store.set('player2',p.id);pickSeat=1}
-      }else{store.set('player',p.id);loadProgress()}
+      store.set('player',p.id);loadProgress();
       renderPlayers();renderLevels();renderPicker()};
     b.appendChild(d)})}
 function stamp(){const d=new Date();const p=n=>String(n).padStart(2,'0');return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`}
@@ -422,39 +418,35 @@ function renderBoard(){const f=$('lb-level').value,box=$('lb');let b=getBoard();
     box.innerHTML+=`<div class="row${me?' me':''}"><span class="rk">${i+1}</span><div class="face">${faceHTML(p.id)}</div><span>${nm}<br><small style="opacity:.7">${LEVELS[e.level-1].name} · ${({practice:'數感',duo:'親子'})[e.mode]||'冒險'} · ${e.date}</small></span><span style="color:#ffd166;font-size:13px">${e.result==='win'||!e.result?('★'.repeat(e.stars)||'過關'):(e.result==='lose'?'😱 被抓':'🚪 中離')}</span><span class="sc">${e.score}</span></div>`})}
 function clearBoard(){if(!confirm('確定清除所有排行榜紀錄？'))return;store.del('board');renderBoard();toast('已清除')}
 /* ====== 遊戲模式 ====== */
-const MODES=[{id:'practice',name:'🌱 數感',hint:'建議國小一年級以上適合｜想想還差幾加起來等於 10?'},{id:'adventure',name:'🦖 冒險',hint:'建議國小三年級以上適合｜暴龍會追公主，消得越快牠退越遠'},{id:'duo',name:'👫 親子',hint:'兩人輪流：一人點一顆出題，另一人找出湊 10 的搭檔'}];
-function curMode(){return store.get('mode')||'practice'}
+const MODES=[{id:'practice',name:'🌱 數感',hint:'建議國小一年級以上適合｜想想還差幾才到目標數？先湊 10，後面湊 11～15'},{id:'adventure',name:'🦖 冒險',hint:'建議國小三年級以上適合｜暴龍會追公主，消得越快牠退越遠'}];
+function curMode(){const m=store.get('mode');return MODES.some(x=>x.id===m)?m:'practice'}
 function renderModes(){const b=$('modes');b.innerHTML='';MODES.forEach(m=>{const d=document.createElement('button');d.className=curMode()===m.id?'on':'';d.textContent=m.name;d.onclick=()=>{store.set('mode',m.id);renderModes()};b.appendChild(d)});
   $('modehint').textContent=MODES.find(m=>m.id===curMode()).hint;
-  if(curMode()==='duo'){pickSeat=1;$('drawer').classList.add('open');$('picker').classList.add('open')}
   renderPlayers();renderPicker()}
-function curPlayer2(){const p=store.get('player2');return (p&&p!==curPlayer())?p:(PLAYERS.find(x=>x.id!==curPlayer()).id)}
 const calm=()=>G&&G.mode!=='adventure';
 function tfMsg(t){$('tfmsg').textContent=t}
 let frameTok=0;
 function frameCells(){const f=$('tframe');if(f.children.length!==10){f.innerHTML='';for(let i=0;i<10;i++)f.appendChild(document.createElement('span'))}return f.children}
 function dotColor(v){return v?getComputedStyle(document.documentElement).getPropertyValue('--c'+v).trim()||'#fff':'#fff'}
-function frameSet(a,b,va,vb){const sl=$('tfslot');if(va)sl.style.setProperty('--ca',dotColor(va));if(vb)sl.style.setProperty('--cb',dotColor(vb));const c=frameCells();for(let i=0;i<10;i++)c[i].className=i<a?'a':(i<a+b?'b':'');
-  const ov=$('over'),n=Math.max(0,a+b-10);
-  if(ov.children.length!==10){ov.innerHTML='';for(let i=0;i<10;i++)ov.appendChild(document.createElement('i'))}
-  for(let i=0;i<10;i++)ov.children[i].className=i>=10-n?'o':'';}
+function overCells(){const ov=$('over');if(ov.children.length!==10){ov.innerHTML='';for(let i=0;i<10;i++)ov.appendChild(document.createElement('i'))}return ov.children}
+function cellAt(i){return i<10?frameCells()[i]:overCells()[i-10]}
+function frameSet(a,b,va,vb){const sl=$('tfslot');if(va)sl.style.setProperty('--ca',dotColor(va));if(vb)sl.style.setProperty('--cb',dotColor(vb));frameCells();overCells();const t=T();
+  $('over').classList.toggle('goal',t>10);
+  for(let i=0;i<20;i++){const e=cellAt(i);let k=i<a?'a':(i<a+b?'b':'');if(i>=10&&i<t)k+=' g';if(i>=t&&i<a+b)k+=' o';e.className=k.trim()}}
 function frameClear(){frameSet(0,0)}
-function showFrame(a,b){const f=$('tframe'),tok=++frameTok;f.classList.remove('off');const c=frameCells();for(let i=0;i<10;i++)c[i].className='';
-  const D=45;
-  for(let i=0;i<a;i++)setTimeout(()=>{c[i].className='a pop';setTimeout(()=>c[i].classList.remove('pop'),120);beep(500+i*40,.05)},i*D);
-  for(let i=0;i<b;i++)setTimeout(()=>{c[a+i].className='b pop';setTimeout(()=>c[a+i].classList.remove('pop'),120);beep(700+i*40,.05)},a*D+100+i*D);
+function showFrame(a,b){const f=$('tframe'),tok=++frameTok;f.classList.remove('off');frameSet(0,0);
+  const D=45,g=i=>(i>=10&&i<T())?' g':'';
+  for(let i=0;i<a;i++)setTimeout(()=>{const e=cellAt(i);e.className='a pop'+g(i);setTimeout(()=>e.classList.remove('pop'),120);beep(500+i*40,.05)},i*D);
+  for(let i=0;i<b;i++)setTimeout(()=>{const e=cellAt(a+i);e.className='b pop'+g(a+i);setTimeout(()=>e.classList.remove('pop'),120);beep(700+i*40,.05)},a*D+100+i*D);
   const live=()=>tok===frameTok&&G&&!G.over&&!G.sel;
-  setTimeout(()=>{if(live())tfMsg(`${a} + ${b} = 10 ✔`)},a*D+b*D+200);
-  setTimeout(()=>{if(tok===frameTok)frameClear();if(live())tfMsg(G.mode==='duo'?duoPrompt():'點一顆寶石')},a*D+b*D+2800)}
+  setTimeout(()=>{if(live())tfMsg(`${a} + ${b} = ${T()} ✔`)},a*D+b*D+200);
+  setTimeout(()=>{if(tok===frameTok)frameClear();if(live())tfMsg('點一顆寶石')},a*D+b*D+2800)}
 function highlightPartners(r,c){const v=G.board[r][c],{cols,rows}=G;let n=0;
-  for(let rr=0;rr<rows;rr++)for(let cc=0;cc<cols;cc++)if(G.board[rr][cc]===10-v&&isAdj(rr,cc,r,c)){tileAt(rr,cc).classList.add('hint');n++}
+  for(let rr=0;rr<rows;rr++)for(let cc=0;cc<cols;cc++)if(G.board[rr][cc]===T()-v&&isAdj(rr,cc,r,c)){tileAt(rr,cc).classList.add('hint');n++}
   return n}
 function needAdj(){return true}
 function isAdj(r1,c1,r2,c2){const dr=Math.abs(r1-r2),dc=Math.abs(c1-c2);return diagOn()?(dr<=1&&dc<=1&&dr+dc>0):(dr+dc===1)}
 function noteWrong(a,b){const k=[Math.min(a,b),Math.max(a,b)].join('+');G.wrongPairs=G.wrongPairs||{};G.wrongPairs[k]=(G.wrongPairs[k]||0)+1}
-function duoPrompt(){const who=G.turn,ans=1-who;return G.phase==='pose'?`${duoName(who)} 出題：點一顆寶石`:`${G.poseVal} 還差幾才到 10？換 ${duoName(ans)} 找`}
-function duoName(i){return playerName(G.duo[i])}
-function renderDuo(){const d=$('duoscore');d.style.display='';d.innerHTML=G.duo.map((p,i)=>`<span class="${(G.phase==='pose'?G.turn:1-G.turn)===i?'cur':''}"><span class="face">${faceHTML(p)}</span>${playerName(p)} ${G.dscore[i]}</span>`).join('')}
 
 /* ====== 關卡 ====== */
 /* stepMs: 怪獸每走 1 格的毫秒; path: 路長; target: 要消幾對; hint: 顯示「還差?」; penalty: 配錯怪獸前進; five: 出 5 的權重(1=正常) */
@@ -465,7 +457,13 @@ const LEVELS=[
   {cols:6,rows:8,stepMs:3200,path:20,target:25,hint:false,penalty:true, five:.25, name:'第三關'},
   {cols:7,rows:8,stepMs:2800,path:20,target:30,hint:false,penalty:true, five:.2,  name:'第四關'},
   {cols:7,rows:9,stepMs:2400,path:20,target:35,hint:false,penalty:true, five:.15, name:'第五關'},
-  {cols:7,rows:9,stepMs:1900,path:15,target:40,hint:false,penalty:true, five:.15, name:'最終 Boss',boss:true}
+  {cols:7,rows:9,stepMs:1900,path:15,target:40,hint:false,penalty:true, five:.15, name:'大魔王',boss:true},
+  /* 十和幾：兩顆加起來等於 11~15（1下 18 以內加法），寶石仍是 1~9 */
+  {cols:6,rows:7,stepMs:4000,path:20,target:15,hint:true, penalty:false,five:.5,  name:'湊 11',sum:11},
+  {cols:6,rows:7,stepMs:3600,path:20,target:20,hint:true, penalty:false,five:.5,  name:'湊 12',sum:12},
+  {cols:6,rows:8,stepMs:3200,path:20,target:20,hint:false,penalty:true, five:.5,  name:'湊 13',sum:13},
+  {cols:7,rows:8,stepMs:2800,path:20,target:25,hint:false,penalty:true, five:.5,  name:'湊 14',sum:14},
+  {cols:7,rows:9,stepMs:2200,path:15,target:30,hint:false,penalty:true, five:.5,  name:'湊 15',sum:15,boss:true}
 ];
 let progress={unlocked:1,stars:{}};
 function progKey(){return 'progress_'+curPlayer()}
@@ -558,10 +556,10 @@ function renderLevels(){
   $('guidetip').textContent='👆 按「第一關」開始玩！';
   const box=$('levels');box.innerHTML='';
   LEVELS.forEach((lv,i)=>{
-    const n=i+1,locked=n>progress.unlocked&&store.get('dev')!=='on' /* DEV-UNLOCK */,st=progress.stars[n]||0;
+    const n=i+1,locked=n>progress.unlocked&&!DEV,st=progress.stars[n]||0;
     const b=document.createElement('button');
     b.className='lv'+(locked?' locked':'')+(lv.boss?' boss':'');
-    b.innerHTML=lv.boss?`👑<small>大魔王</small>`:`<span style="font-size:15px;line-height:1.1">${lv.name}</span><small>${lv.target} 對</small>`;
+    b.innerHTML=lv.boss?`👑<small>${lv.name}</small>`:`<span style="font-size:15px;line-height:1.1">${lv.name}</span><small>${lv.target} 對</small>`;
     if(st)b.innerHTML+=`<span class="stars">${'★'.repeat(st)}</span>`;
     if(!locked)b.onclick=()=>startLevel(i);
     if(i===guideIdx&&!locked)b.classList.add('guide');
@@ -574,28 +572,27 @@ let G=null;
 function startLevel(i){
   const lv=LEVELS[i];
   const cm=curMode();const sz=cm==='adventure'?{cols:lv.cols,rows:lv.rows}:CALM_SIZE;
-  G={i,lv,mode:cm,cols:sz.cols,rows:sz.rows,board:[],sel:null,wrongPairs:{},cleared:0,mpos:0,timer:null,idle:0,lastClear:0,combo:0,hits:0,energy:0,busy:false,over:false,wrong:0,angelCount:0,score:0,start:Date.now()};
+  G={i,lv,sum:lv.sum||10,mode:cm,cols:sz.cols,rows:sz.rows,board:[],sel:null,wrongPairs:{},cleared:0,mpos:0,timer:null,idle:0,lastClear:0,combo:0,hits:0,energy:0,busy:false,over:false,wrong:0,angelCount:0,score:0,start:Date.now()};
   $('hud-level').textContent=lv.name;$('hud-target').textContent=lv.target;$('hud-cleared').textContent=0;$('hud-combo').textContent='';$('hud-score').textContent=0;
   $('mute').textContent=muted?'🔇 靜音':'🔊 聲音';
   renderFace($('princess-face'),curPlayer());renderFace($('monster-face'),lv.boss?'boss':'monster');renderFace($('angel-face'),'angel');
   $('princess').querySelector('.tag').textContent=playerName(curPlayer());
   $('monster').classList.toggle('boss',!!lv.boss);$('monster-tag').textContent=lv.boss?'爸爸大魔王':'Bryson';$('m-crown').style.display=lv.boss?'':'none';
   $('overlay').classList.remove('on');$('angel').classList.remove('on');document.body.classList.remove('danger');
-  $('s-game').classList.toggle('calm',G.mode!=='adventure');$('s-game').classList.toggle('duomode',G.mode==='duo');$('tframe').classList.add('off');$('duoscore').style.display='none';
+  $('s-game').classList.toggle('calm',G.mode!=='adventure');$('tframe').classList.add('off');
   frameClear();$('tframe').classList.remove('off');
-  if(G.mode==='duo'){G.duo=[curPlayer(),curPlayer2()];G.dscore=[0,0];G.turn=0;G.phase='pose';renderDuo();tfMsg(duoPrompt())}
-  else if(G.mode==='practice')tfMsg('點一顆寶石');
+  if(G.mode==='practice')tfMsg('點一顆寶石');
   show('s-game');newBoard();settle();store.set(lastKey(),i);requestWake();$('btn-pause').textContent='⏸ 暫停';
-  const begin=()=>{if(calm()){G.timer=setInterval(tick,100);return}say('p',lv.boss?'爸爸大魔王來了！快！':'快幫我湊 10！',1500);countdown(()=>{if(G&&!G.over)G.timer=setInterval(tick,100)})};
-  if(!store.get('tutorialDone')){showTutorial(begin)}else begin();
+  const begin=()=>{if(calm()){G.busy=false;G.timer=setInterval(tick,100);return}say('p',lv.boss?'爸爸大魔王來了！快！':`快幫我湊 ${T()}！`,1500);countdown(()=>{if(G&&!G.over)G.timer=setInterval(tick,100)})};
+  if(!store.get('tutorialDone')||(G.sum>10&&!store.get('tutorialDone11'))){showTutorial(begin)}else begin();
 }
 function countdown(done){let n=3;G.busy=true;G.cd=true;const go=()=>{if(!G||G.over)return;if(G.cdPaused){setTimeout(go,200);return}if(n===0){G.busy=false;G.cd=false;done();return}
   const d=document.createElement('div');d.className='count';d.textContent=n;$('s-game').appendChild(d);beep(n===1?880:660,.15);setTimeout(()=>d.remove(),900);n--;setTimeout(go,900)};go()}
 function showTutorial(done){G.busy=true;$('ov-stars').textContent='💎';$('ov-title').textContent='怎麼玩';
   $('ov-text').innerHTML=curMode()==='adventure'
-    ?'<div class="tut">1. 點一顆寶石再點<b>旁邊</b>那顆（含<b>斜的</b>），或直接<b>滑過去</b><br>2. 兩個數字<b>加起來 = 10</b> 就會碎掉<br>3. 每碎一對，暴龍就<b>後退</b><br>4. 暴龍抓到 Yuna 就輸了<br>5. 消滿目標數就過關！</div>'
-    :'<div class="tut">1. 先點一顆寶石，圓點會顯示它有多少<br>2. 想想<b>還差幾才到 10</b><br>3. 點<b>旁邊</b>那顆湊得成 10 的（每顆旁邊都一定有搭檔）<br>4. 兩顆一起碎掉，圓點會告訴你怎麼湊成 10<br>5. 沒有暴龍，慢慢想沒關係！</div>';
-  $('ov-family').innerHTML='';const b=$('ov-btn');b.textContent='我知道了！';b.onclick=()=>{store.set('tutorialDone','1');$('overlay').classList.remove('on');$('ov-text').textContent='';done()};$('overlay').classList.add('on')}
+    ?`<div class="tut">1. 點一顆寶石再點<b>旁邊</b>那顆（含<b>斜的</b>），或直接<b>滑過去</b><br>2. 兩個數字<b>加起來 = ${T()}</b> 就會碎掉<br>3. 每碎一對，暴龍就<b>後退</b><br>4. 暴龍抓到 Yuna 就輸了<br>5. 消滿目標數就過關！</div>`
+    :`<div class="tut">1. 先點一顆寶石，圓點會顯示它有多少<br>2. 想想<b>還差幾才到 ${T()}</b><br>3. 點<b>旁邊</b>那顆湊得成 ${T()} 的（每顆旁邊都一定有搭檔）<br>4. 兩顆一起碎掉，圓點會告訴你怎麼湊成 ${T()}<br>5. 沒有暴龍，慢慢想沒關係！</div>`;
+  $('ov-family').innerHTML='';const b=$('ov-btn');b.textContent='我知道了！';b.onclick=()=>{store.set('tutorialDone','1');if(G.sum>10)store.set('tutorialDone11','1');$('overlay').classList.remove('on');$('ov-text').textContent='';done()};$('overlay').classList.add('on')}
 function stopGame(){if(G){clearInterval(G.timer);G.over=true;G.timer=null}releaseWake()}
 function pauseGame(){if(!G||G.over)return;if(G.cd){G.cdPaused=true}if(G.timer){clearInterval(G.timer);G.timer=null}$('btn-pause').textContent='▶ 繼續'}
 function resumeGame(){if(!G||G.over)return;if(G.cd){G.cdPaused=false}else if(!G.timer)G.timer=setInterval(tick,100);$('btn-pause').textContent='⏸ 暫停'}
@@ -744,15 +741,15 @@ const MATS={
 
 /* ====== 盤面 ====== */
 // 洗牌袋：每一輪 1/9、2/8、3/7、4/6 各出現同樣次數，5 依關卡權重；避免某組合連續大量出現
-function refillBag(lv){const b=[];for(let k=0;k<2;k++)b.push(1,9,2,8,3,7,4,6);const f=Math.round(lv.five*2);for(let k=0;k<f;k++)b.push(5);
+function refillBag(lv){const t=lv.sum||10,b=[],lo=Math.max(1,t-9);for(let k=0;k<2;k++)for(let a=lo;a*2<t;a++)b.push(a,t-a);if(t%2===0){const f=Math.round(lv.five*2);for(let k=0;k<f;k++)b.push(t/2)}
   for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}G.bag=b}
 function diagOn(){return (store.get('diag')||'on')==='on'}
-function fiveCount(){let n=0;for(const row of G.board)if(row)for(const v of row)if(v===5)n++;return n}
+function fiveCount(){const h=half();if(!h)return 0;let n=0;for(const row of G.board)if(row)for(const v of row)if(v===h)n++;return n}
 function fiveCap(){return Math.max(2,Math.round(G.cols*G.rows*0.07))}
 function rnd(lv,bad){ // 從袋子取一顆；bad 為不可用的數字集合
   if(!G.bag||!G.bag.length)refillBag(lv);
   const over=fiveCount()>=fiveCap();
-  const ok=v=>(!bad||!bad.has(v))&&!(over&&v===5);
+  const ok=v=>(!bad||!bad.has(v))&&!(over&&v===half());
   let i=G.bag.findIndex(ok);
   if(i<0){refillBag(lv);i=G.bag.findIndex(ok)}
   if(i<0)i=G.bag.length-1;
@@ -769,13 +766,13 @@ function pairFill(){
   }
   const val={};for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const p=id[r][c];
     if(!(p in val)){const a=rnd(G.lv);val[p]=a;G.board[r][c]=a}
-    else G.board[r][c]=10-val[p]}
+    else G.board[r][c]=T()-val[p]}
   if(!limitPartners()&&(G.fillTries=(G.fillTries||0)+1)<25)pairFill();else G.fillTries=0;
 }
-const MAXP=2; // 數感／親子：每顆寶石旁邊最多 2 顆可配對
+const MAXP=2; // 數感：每顆寶石旁邊最多 2 顆可配對
 function nbrs(r,c){const {cols,rows}=G;const off=diagOn()?[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]]:[[-1,0],[1,0],[0,-1],[0,1]];
   const out=[];for(const [dy,dx] of off){const r2=r+dy,c2=c+dx;if(r2>=0&&r2<rows&&c2>=0&&c2<cols)out.push([r2,c2])}return out}
-function partnerCount(r,c){const v=G.board[r][c];if(!v)return 0;let n=0;for(const [r2,c2] of nbrs(r,c))if(G.board[r2][c2]===10-v)n++;return n}
+function partnerCount(r,c){const v=G.board[r][c];if(!v)return 0;let n=0;for(const [r2,c2] of nbrs(r,c))if(G.board[r2][c2]===T()-v)n++;return n}
 function okCell(r,c){const n=partnerCount(r,c);return n>=1&&n<=MAXP}
 function limitPartners(){ // 把「搭檔太多」的情況修掉，維持每顆 1~MAXP 個
   const {cols,rows}=G;
@@ -783,10 +780,10 @@ function limitPartners(){ // 把「搭檔太多」的情況修掉，維持每顆
     let bad=null;for(let r=0;r<rows&&!bad;r++)for(let c=0;c<cols;c++)if(G.board[r][c]&&partnerCount(r,c)>MAXP){bad=[r,c];break}
     if(!bad)return true;
     const [r,c]=bad,v=G.board[r][c];
-    const cands=nbrs(r,c).filter(([r2,c2])=>G.board[r2][c2]===10-v).sort(()=>Math.random()-.5);
+    const cands=nbrs(r,c).filter(([r2,c2])=>G.board[r2][c2]===T()-v).sort(()=>Math.random()-.5);
     let fixed=false;
     for(const [r2,c2] of cands){const old=G.board[r2][c2];
-      for(let t=0;t<12&&!fixed;t++){const nv=1+Math.floor(Math.random()*9);if(nv===old||nv===10-v)continue;
+      for(let t=0;t<12&&!fixed;t++){const [lo,hi]=vrange(),nv=lo+Math.floor(Math.random()*(hi-lo+1));if(nv===old||nv===T()-v)continue;
         G.board[r2][c2]=nv;
         if(okCell(r2,c2)&&nbrs(r2,c2).every(([a,b])=>okCell(a,b)))fixed=true;else G.board[r2][c2]=old}
       if(fixed)break}
@@ -798,7 +795,7 @@ function partnerOf(r,c){
   const v=G.board[r][c];if(!v)return null;const {cols,rows}=G;
   const off=diagOn()?[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]]:[[-1,0],[1,0],[0,-1],[0,1]];
   for(const [dy,dx] of off){const r2=r+dy,c2=c+dx;if(r2<0||r2>=rows||c2<0||c2>=cols)continue;
-    if(G.board[r2][c2]===10-v)return [r2,c2]}
+    if(G.board[r2][c2]===T()-v)return [r2,c2]}
   return null;
 }
 function orphanNear(r,c,skip){
@@ -810,10 +807,10 @@ function orphanNear(r,c,skip){
 }
 function refillPair(p1,p2){
   const o1=orphanNear(p1[0],p1[1],p2),o2=orphanNear(p2[0],p2[1],p1);
-  if(o1&&o2){G.board[p1[0]][p1[1]]=10-G.board[o1[0]][o1[1]];G.board[p2[0]][p2[1]]=10-G.board[o2[0]][o2[1]]}
-  else if(o1){const v=10-G.board[o1[0]][o1[1]];G.board[p1[0]][p1[1]]=v;G.board[p2[0]][p2[1]]=10-v}
-  else if(o2){const v=10-G.board[o2[0]][o2[1]];G.board[p2[0]][p2[1]]=v;G.board[p1[0]][p1[1]]=10-v}
-  else{const a=rnd(G.lv);G.board[p1[0]][p1[1]]=a;G.board[p2[0]][p2[1]]=10-a}
+  if(o1&&o2){G.board[p1[0]][p1[1]]=T()-G.board[o1[0]][o1[1]];G.board[p2[0]][p2[1]]=T()-G.board[o2[0]][o2[1]]}
+  else if(o1){const v=T()-G.board[o1[0]][o1[1]];G.board[p1[0]][p1[1]]=v;G.board[p2[0]][p2[1]]=T()-v}
+  else if(o2){const v=T()-G.board[o2[0]][o2[1]];G.board[p2[0]][p2[1]]=v;G.board[p1[0]][p1[1]]=T()-v}
+  else{const a=rnd(G.lv);G.board[p1[0]][p1[1]]=a;G.board[p2[0]][p2[1]]=T()-a}
   const {cols,rows}=G;for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(G.board[r][c]&&!partnerOf(r,c)){pairFill();return}
   if(!limitPartners())pairFill();
 }
@@ -824,16 +821,16 @@ function newBoard(){
   else{for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)G.board[r][c]=smartNum(r,c);if(countMoves()===0)shuffle(false)}
   const g=$('grid');g.style.gridTemplateColumns=`repeat(${cols},1fr)`;drawBoard();fitGrid();
 }
-function smartNum(r,c){ // 60% 機率與鄰居湊 10（5+5 除外）
+function smartNum(r,c){ // 60% 機率與鄰居湊成目標數（自己配自己的那個數除外）
   const off=diagOn()?[[-1,0],[0,-1],[-1,-1],[-1,1]]:[[-1,0],[0,-1]];
-  const nb=off.map(([dy,dx])=>G.board[r+dy]&&G.board[r+dy][c+dx]).filter(v=>v&&v!==5);
-  if(nb.length&&Math.random()<.6){const v=10-nb[Math.floor(Math.random()*nb.length)];if(v!==5||fiveCount()<fiveCap())return v}
+  const nb=off.map(([dy,dx])=>G.board[r+dy]&&G.board[r+dy][c+dx]).filter(v=>v&&v!==half());
+  if(nb.length&&Math.random()<.6){const v=T()-nb[Math.floor(Math.random()*nb.length)];if(v!==half()||fiveCount()<fiveCap())return v}
   return rnd(G.lv);
 }
-function safeNum(r,c){ // 補進的寶石不與鄰居湊 10
+function safeNum(r,c){ // 補進的寶石不與鄰居湊成目標數
   const off=diagOn()?[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]]:[[-1,0],[1,0],[0,-1],[0,1]];
   const nb=off.map(([dy,dx])=>G.board[r+dy]&&G.board[r+dy][c+dx]).filter(v=>v);
-  const bad=new Set(nb.map(v=>10-v));
+  const bad=new Set(nb.map(v=>T()-v));
   return rnd(G.lv,bad);
 }
 function drawBoard(){
@@ -851,7 +848,7 @@ function countMoves(list){
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const v=G.board[r][c];if(!v)continue;
     const D=dg?[[0,1],[1,0],[1,1],[1,-1]]:[[0,1],[1,0]];
     for(const [dr,dc] of D){const r2=r+dr,c2=c+dc;if(r2<0||r2>=rows||c2<0||c2>=cols)continue;
-      const w=G.board[r2][c2];if(w&&v+w===10){n++;if(list)list.push([r,c,r2,c2])}}}
+      const w=G.board[r2][c2];if(w&&v+w===T()){n++;if(list)list.push([r,c,r2,c2])}}}
   return n;
 }
 function shuffle(notify=true){
@@ -869,25 +866,24 @@ function tap(r,c){
   if(G.busy||G.over||!G.board[r][c])return;
   G.idle=0;
   if(!G.sel){G.sel=[r,c];tileAt(r,c).classList.add('sel');GL.select(r,c,true);beep(440,.05);
-    if(G.mode==='practice'){const v=G.board[r][c];frameSet(v,0,v,v);tfMsg(`${v} 還差幾才到 10？`)}
-    else if(G.mode==='duo'){G.poseVal=G.board[r][c];G.phase='answer';frameSet(G.board[r][c],0,G.board[r][c],G.board[r][c]);renderDuo();tfMsg(duoPrompt())}
-    else if(G.lv.hint)$('diff').textContent=`還差 ${10-G.board[r][c]}`;
+    if(G.mode==='practice'){const v=G.board[r][c];frameSet(v,0,v,v);tfMsg(`${v} 還差幾才到 ${T()}？`)}
+    else if(G.lv.hint)$('diff').textContent=`還差 ${T()-G.board[r][c]}`;
     return}
   const [sr,sc]=G.sel;
-  if(sr===r&&sc===c){if(G.mode==='duo'){G.phase='pose';renderDuo();tfMsg(duoPrompt())}clearSel();return}
+  if(sr===r&&sc===c){clearSel();return}
   const dr=Math.abs(sr-r),dc=Math.abs(sc-c);
   const adjacent=needAdj()?(diagOn()?(dr<=1&&dc<=1&&dr+dc>0):(dr+dc===1)):true;
   const a=G.board[sr][sc],b=G.board[r][c];
-  if(adjacent&&a+b===10){clearSel();if(G.mode==='duo'){G.dscore[1-G.turn]++;G.turn=1-G.turn;G.phase='pose';renderDuo()}eliminate(sr,sc,r,c);}
-  else if(calm()){ // 練習／親子：不懲罰，說明原因
+  if(adjacent&&a+b===T()){clearSel();eliminate(sr,sc,r,c);}
+  else if(calm()){ // 數感：不懲罰，說明原因
     sfx.bad();[tileAt(sr,sc),tileAt(r,c)].forEach(t=>{t.classList.add('bad');setTimeout(()=>t.classList.remove('bad'),400)});
-    if(adjacent){noteWrong(a,b);frameSet(a,b,a,b);setTimeout(()=>{if(G&&!G.over&&G.sel)frameSet(a,0,a,a)},1800);tfMsg(`${a} + ${b} = ${a+b}，${a+b<10?`還差 ${10-(a+b)} 才到 10`:`多了 ${a+b-10}`}`);setTimeout(()=>{if(G&&!G.over&&G.sel)tfMsg(G.mode==='duo'?duoPrompt():`再找一顆跟 ${a} 湊 10 的`)},2200)}
+    if(adjacent){noteWrong(a,b);frameSet(a,b,a,b);setTimeout(()=>{if(G&&!G.over&&G.sel)frameSet(a,0,a,a)},1800);tfMsg(`${a} + ${b} = ${a+b}，${a+b<T()?`還差 ${T()-(a+b)} 才到 ${T()}`:`多了 ${a+b-T()}`}`);setTimeout(()=>{if(G&&!G.over&&G.sel)tfMsg(`再找一顆跟 ${a} 湊 ${T()} 的`)},2200)}
     else tfMsg('要選旁邊的寶石喔');
-    G.wrong++;if(G.mode==='duo'){G.turn=1-G.turn;G.phase='pose';renderDuo();clearSel();setTimeout(()=>{if(G&&!G.over)tfMsg(duoPrompt())},2200)}
+    G.wrong++;
   }
   else{
     sfx.bad();[tileAt(sr,sc),tileAt(r,c)].forEach(t=>{t.classList.add('bad');setTimeout(()=>t.classList.remove('bad'),400)});
-    $('diff').textContent=adjacent?`${a}+${b}=${a+b}，不是 10 喔`:'要選旁邊的寶石';
+    $('diff').textContent=adjacent?`${a}+${b}=${a+b}，不是 ${T()} 喔`:'要選旁邊的寶石';
     setTimeout(()=>{if($('diff').textContent.includes('不是')||$('diff').textContent.includes('旁邊'))$('diff').textContent=''},1500);
     clearSel(true);G.wrong++;
     if(G.lv.penalty)moveMonster(1,'shake');
@@ -932,13 +928,13 @@ g.addEventListener('pointermove',e=>{
 const up=e=>{if(!D.active)return;endDrag();if(!D.moved&&D.sameSel)clearSel();};
 g.addEventListener('pointerup',up);g.addEventListener('pointercancel',up);
 document.addEventListener('pointerup',e=>{if(D.active)endDrag()});}
-function clearSel(keepDiff){if(G.sel){tileAt(G.sel[0],G.sel[1]).classList.remove('sel');GL.select(G.sel[0],G.sel[1],false);G.sel=null}clearTimeout(G.hintT);document.querySelectorAll('.tile.hint').forEach(t=>t.classList.remove('hint'));if(calm()&&!G.busy){frameClear();if(!G.over)tfMsg(G.mode==='duo'?duoPrompt():'點一顆寶石')}if(!keepDiff)$('diff').textContent=''}
+function clearSel(keepDiff){if(G.sel){tileAt(G.sel[0],G.sel[1]).classList.remove('sel');GL.select(G.sel[0],G.sel[1],false);G.sel=null}clearTimeout(G.hintT);document.querySelectorAll('.tile.hint').forEach(t=>t.classList.remove('hint'));if(calm()&&!G.busy){frameClear();if(!G.over)tfMsg('點一顆寶石')}if(!keepDiff)$('diff').textContent=''}
 function addPts(n){G.score+=n;$('hud-score').textContent=G.score}
 function eliminate(r1,c1,r2,c2){
   G.busy=true;const now=Date.now();
   G.combo=(now-G.lastClear<5000)?G.combo+1:1;G.lastClear=now;
   const t1=tileAt(r1,c1),t2=tileAt(r2,c2);t1.classList.add('pop');t2.classList.add('pop');GL.pop(r1,c1);GL.pop(r2,c2);
-  fx(t1,'10!');shatter(t1);shatter(t2);sfx.shatter();if(calm()){const va=G.board[r1][c1],vb=G.board[r2][c2];frameSet(0,0,va,vb);showFrame(va,vb);if(G.mode==='practice'&&G.cleared%3===0)angel('eq',va,vb)}vib(G.combo>=2?[40,30,40,30,60]:40);shake(G.combo>=2);
+  fx(t1,T()+'!');shatter(t1);shatter(t2);sfx.shatter();if(calm()){const va=G.board[r1][c1],vb=G.board[r2][c2];frameSet(0,0,va,vb);showFrame(va,vb);if(G.mode==='practice'&&G.cleared%3===0)angel('eq',va,vb)}vib(G.combo>=2?[40,30,40,30,60]:40);shake(G.combo>=2);
   if(G.combo>=2){sfx.combo();$('hud-combo').textContent=`🔥 連擊 x${G.combo}`;}else{sfx.ok();$('hud-combo').textContent=''}
   G.cleared++;$('hud-cleared').textContent=G.cleared;addPts(10+(G.combo>=2?5*Math.min(G.combo,10):0));
   const push=G.combo>=2?3:2;if(!calm())moveMonster(-push,'hit');
@@ -961,7 +957,7 @@ function gravity(){
   }
   if(countMoves()===0){ // 全盤無解時，讓最後補進的一顆可配對
     const r=0,c=Math.floor(Math.random()*cols);const nb=[G.board[r+1]&&G.board[r+1][c],G.board[r][c-1],G.board[r][c+1]].filter(v=>v);
-    if(nb.length)G.board[r][c]=10-nb[Math.floor(Math.random()*nb.length)];
+    if(nb.length)G.board[r][c]=T()-nb[Math.floor(Math.random()*nb.length)];
   }
   drawBoard();
   document.querySelectorAll('.tile').forEach(t=>t.classList.add('drop'));
@@ -975,7 +971,7 @@ function shatter(el){
 }
 function shake(big){
   let cls=null;
-  if(calm()){cls=big?'shakeC':'shake2'} // 數感／親子：固定有震動回饋
+  if(calm()){cls=big?'shakeC':'shake2'} // 數感：固定有震動回饋
   else if(big){if((store.get('shake2')||'on')==='on')cls='shakeC'}
   else{const lv=store.get('shake')||'off';if(lv!=='off')cls='shake'+lv}
   if(!cls)return;const g=$('s-game'),f=$('flash');g.classList.remove('shake1','shake2','shake3','shakeC');f.classList.remove('on');void g.offsetWidth;g.classList.add(cls);
@@ -1039,7 +1035,7 @@ function angel(kind,va,vb){
     txt=(kind==='danger'?'別急！':'慢慢來，')+`找 ${G.board[r1][c1]} 和 ${G.board[r2][c2]}！`;
     [tileAt(r1,c1),tileAt(r2,c2)].forEach(t=>{t.classList.add('hint');setTimeout(()=>t.classList.remove('hint'),2500)});}
   if(kind==='combo'){txt='太棒了！繼續！';hearts()}
-  if(kind==='eq'){txt=`對！${va} 加 ${vb} 是 10！`;hearts()}
+  if(kind==='eq'){txt=`對！${va} 加 ${vb} 是 ${T()}！`;hearts()}
   $('angel-text').textContent=txt;$('angel').classList.add('on');sfx.angel();
   clearTimeout(angel._t);angel._t=setTimeout(()=>$('angel').classList.remove('on'),2200);
 }
@@ -1054,11 +1050,10 @@ function win(){
   progress.stars[n]=Math.max(progress.stars[n]||0,stars);
   if(n>=progress.unlocked&&n<LEVELS.length)progress.unlocked=n+1;saveProgress();store.set(lastKey(),Math.min(n,LEVELS.length-1));
   $('ov-stars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);
-  $('ov-title').textContent=G.mode==='duo'?(G.dscore[0]===G.dscore[1]?'平手！':`${duoName(G.dscore[0]>G.dscore[1]?0:1)} 贏了！`):G.mode==='practice'?'全部湊好了！':G.lv.boss?'打敗爸爸大魔王！':'公主逃進城堡了！';
+  $('ov-title').textContent=G.mode==='practice'?'全部湊好了！':G.lv.boss?'打敗爸爸大魔王！':'公主逃進城堡了！';
   const wp=Object.entries(G.wrongPairs||{}).sort((x,y)=>y[1]-x[1]).slice(0,3);
   const wpTxt=wp.length?`<br><small>今天比較卡的：${wp.map(([k,n])=>`${k}（${n} 次）`).join('、')}</small>`:'<br><small>今天全對，完全沒卡！</small>';
-  if(G.mode==='duo')$('ov-text').innerHTML=`${duoName(0)} ${G.dscore[0]} 分 vs ${duoName(1)} ${G.dscore[1]} 分`+wpTxt;
-  else if(G.mode==='practice')$('ov-text').innerHTML=`消了 ${G.cleared} 對 🎆<br><b style="color:var(--gold)">${G.score} 分</b>`+wpTxt;
+  if(G.mode==='practice')$('ov-text').innerHTML=`消了 ${G.cleared} 對 🎆<br><b style="color:var(--gold)">${G.score} 分</b>`+wpTxt;
   else $('ov-text').innerHTML=(G.lv.boss?'全家一起放煙火 🎆🎆🎆':`消了 ${G.cleared} 對，暴龍摔倒了 🤕`)+`<br><b style="color:var(--gold)">${G.score} 分</b>（時間加成 +${bonus}）· 排行榜第 ${rank} 名`;
   $('ov-family').innerHTML=G.lv.boss?ROLES.map(r=>`<div class="face">${faceHTML(r.id)}</div>`).join(''):`<div class="face">${faceHTML('princess')}</div><div class="face">${faceHTML('angel')}</div>`;
   const b=$('ov-btn');
@@ -1113,7 +1108,7 @@ function showSettings(){
   prevScreen=document.querySelector('.screen.on').id;
   if(G&&!G.over&&(G.timer||G.cd)){pauseGame();paused=true}
   document.querySelectorAll('#s-settings [data-modes]').forEach(el=>{el.style.display=el.dataset.modes.split(',').includes(curMode())?'':'none'});
-  $('opt-angel').value=store.get('angel')||'veryoften';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-dev').value=store.get('dev')||'off';$('opt-mat').value=store.get('mat')||'energymetal';$('opt-gl').value=store.get('gl')||'on';$('opt-pal').value=store.get('pal')||'rainbow';$('opt-speed').value=store.get('speed')||'0.5';$('opt-diag').value=store.get('diag')||'on';$('opt-sfx').value=store.get('clearSfx')||'magic';$('opt-bgm').value=store.get('bgm')||'on';
+  $('opt-angel').value=store.get('angel')||'veryoften';$('opt-vib').value=store.get('vib')||'on';$('opt-shake').value=store.get('shake')||'off';$('opt-shake2').value=store.get('shake2')||'on';$('opt-mat').value=store.get('mat')||'energymetal';$('opt-gl').value=store.get('gl')||'on';$('opt-pal').value=store.get('pal')||'rainbow';$('opt-speed').value=store.get('speed')||'0.5';$('opt-diag').value=store.get('diag')||'on';$('opt-sfx').value=store.get('clearSfx')||'magic';$('opt-bgm').value=store.get('bgm')||'on';
   show('s-settings');
 }
 function closeSettings(){
@@ -1126,14 +1121,14 @@ $('opt-bgm').onchange=e=>{store.set('bgm',e.target.value);BGM.update()};
 $('opt-vib').onchange=e=>store.set('vib',e.target.value);
 $('opt-shake').onchange=e=>store.set('shake',e.target.value);
 $('opt-shake2').onchange=e=>store.set('shake2',e.target.value);
-$('opt-dev').onchange=e=>store.set('dev',e.target.value); // DEV-UNLOCK
 $('opt-mat').onchange=e=>{store.set('mat',e.target.value);GL.restyle()};
 $('opt-gl').onchange=e=>{store.set('gl',e.target.value);toast('重新整理頁面後生效')};
 $('opt-pal').onchange=e=>{store.set('pal',e.target.value);GL.restyle()};
 $('opt-speed').onchange=e=>store.set('speed',e.target.value);
 $('opt-diag').onchange=e=>{store.set('diag',e.target.value);if(G&&!G.over&&countMoves()===0)shuffle()};
 function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1600)}
-function resetProgress(){if(!confirm('確定要清除 '+playerName(curPlayer())+' 的星星和關卡進度嗎？（其他人的不受影響）'))return;progress.unlocked=1;progress.stars={};saveProgress();store.del(lastKey());renderLevels();toast('已重置 '+playerName(curPlayer())+' 的進度')}
+function resetProgress(){const b=$('btn-reset');if(!b.dataset.arm){b.dataset.arm='1';b.textContent='再按一次確定';setTimeout(()=>{delete b.dataset.arm;b.textContent='重置'},3000);return}
+  delete b.dataset.arm;b.textContent='重置';progress.unlocked=1;progress.stars={};saveProgress();store.del(lastKey());renderLevels();toast('已重置 '+playerName(curPlayer())+' 的進度')}
 function previewSfx(){sfx.shatter();vib(40)}
 
 
