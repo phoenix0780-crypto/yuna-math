@@ -216,7 +216,8 @@ h1.h2{font-size:26px;margin:10px 0;text-shadow:0 3px 0 #a86f00}
 #fx i{position:absolute;top:-14px;width:10px;height:14px;border-radius:2px;animation:fall linear forwards}
 @keyframes fall{to{transform:translateY(110vh) rotate(var(--r))}}
 .ver{position:fixed;left:6px;bottom:calc(2px + env(safe-area-inset-bottom));font-size:11px;opacity:.45;z-index:25;pointer-events:none;color:#fff}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}#fx{display:none}.rock.crack,.rock.fizz{opacity:0}.piece,.dust,.numfx{display:none}}
+/* 減少動態效果：只關裝飾動畫（星星閃爍、提示脈衝、彩帶），命中回饋（光束、裂開、碎裂）一律保留 */
+@media (prefers-reduced-motion:reduce){#stars,#stars2,.picker.hint,.lv.guide,.frame i.need{animation:none!important}#fx{display:none}}
 </style>
 </head>
 <body>
@@ -293,7 +294,7 @@ h1.h2{font-size:26px;margin:10px 0;text-shadow:0 3px 0 #a86f00}
 <div class="ver" id="ver"></div>
 
 <script>
-const VERSION='v1.1';
+const VERSION='v1.2';
 const $=id=>document.getElementById(id);
 const DEV=/(^|[?#&])dev(\b|$)/.test(location.search+location.hash);
 /* ====== 儲存（沿用前作，localStorage 失敗時退回記憶體） ====== */
