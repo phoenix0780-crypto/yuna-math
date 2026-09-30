@@ -217,7 +217,7 @@ h1{margin:10px 0 0;text-align:center;font-size:clamp(28px,8.4vw,40px);font-weigh
 <div id="ver"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-const VERSION='v1.0';
+const VERSION='v1.1';
 const DEV=/(^|[?#&])dev(\b|$)/.test(location.search+location.hash);
 /* ====== 儲存（沿用恐怖大怪獸：localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -256,7 +256,7 @@ const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 
 /* ====== 音效（沿用恐怖大怪獸，再加方塊島用的） ====== */
-let muted=store.get('muted')==='1';let actx;
+let muted=store.get('blk_muted')==='1';let actx;
 function beep(f,d=.1,type='sine',vol=.25){
   if(muted)return;try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();
   const o=actx.createOscillator(),g=actx.createGain();o.type=type;o.frequency.value=f;g.gain.value=vol;
@@ -313,7 +313,7 @@ const BGM=(()=>{
   const MEL=[[N.Fs5,N.E5,N.D5,N.Cs5],[N.B4,N.A4,N.B4,N.Cs5],[N.D5,N.Cs5,N.B4,N.A4],[N.G4,N.Fs4,N.G4,N.A4],[N.D5,N.Fs5,N.A5,N.G5],[N.Fs5,N.D5,N.Fs5,N.E5],[N.D5,N.B4,N.D5,N.A4],[N.G4,N.B4,N.A4,N.G4]];
   let melOn=false;
   function ctx(){actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();return actx}
-  function want(){return (store.get('bgm')||'on')==='on'&&!muted}
+  function want(){return (store.get('blk_bgm')||'on')==='on'&&!muted}
   function pad(freqs,t,dur){const g=ctx().createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.045,t+.6);g.gain.setValueAtTime(.045,t+dur-.6);g.gain.linearRampToValueAtTime(0,t+dur);g.connect(master);
     freqs.forEach(f=>[0,-6,6].forEach(dt=>{const o=ctx().createOscillator();o.type='triangle';o.frequency.value=f;o.detune.value=dt;o.connect(g);o.start(t);o.stop(t+dur)}))}
   function pluck(f,t,dur=1.4,vol=.09){const g=ctx().createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+dur);g.connect(master);
@@ -337,7 +337,7 @@ const TTS=(()=>{let voice=null;
   function load(){try{const v=speechSynthesis.getVoices();voice=v.find(x=>/zh[-_]TW/i.test(x.lang))||v.find(x=>/zh[-_](HK|Hant)/i.test(x.lang))||v.find(x=>/^zh/i.test(x.lang))||null}catch(e){}}
   try{load();speechSynthesis.onvoiceschanged=load}catch(e){}
   const on=()=>(store.get('blk_tts')||'on')==='on';
-  function say(t,force){if((!on()&&!force)||!window.speechSynthesis||!t)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t).replace(/\+/g,' 加 ').replace(/−/g,' 減 ').replace(/=/g,' 等於 '));u.lang='zh-TW';if(voice)u.voice=voice;u.rate=.95;u.pitch=1.1;speechSynthesis.speak(u)}catch(e){}}
+  function say(t,force){if((!on()&&!force)||!window.speechSynthesis||!t)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t).replace(/\+/g,' 加 ').replace(/−/g,' 減 ').replace(/=/g,' 等於 '));u.lang='zh-TW';if(voice)u.voice=voice;u.rate=.95;u.pitch=1.1;u.onend=u.onerror=()=>audioAlive();speechSynthesis.speak(u)}catch(e){}}
   function stop(){try{speechSynthesis.cancel()}catch(e){}}
   return {say,stop}})();
 
@@ -702,12 +702,14 @@ function renderPlayers(){const box=$('players');box.innerHTML='';
     d.innerHTML=`<div class="face">${faceHTML(pl.id)}</div>${playerName(pl.id)}${pl.id==='guest'&&on?'<span class="pen">✏️</span>':''}`;box.appendChild(d)})}
 /* ====== 設定 ====== */
 function renderSettings(){const tg=(id,on)=>{$(id).textContent=on?'開':'關';$(id).classList.toggle('on',on)};
-  tg('t-sfx',!muted);tg('t-bgm',(store.get('bgm')||'on')==='on');tg('t-tts',(store.get('blk_tts')||'on')==='on');$('reset-lbl').textContent='重置 '+playerName(curPlayer())+' 的進度'}
+  tg('t-sfx',!muted);tg('t-bgm',(store.get('blk_bgm')||'on')==='on');tg('t-tts',(store.get('blk_tts')||'on')==='on');$('reset-lbl').textContent='重置 '+playerName(curPlayer())+' 的進度'}
 
 let wake=null;async function requestWake(){try{wake=await navigator.wakeLock.request('screen')}catch(e){}}function releaseWake(){try{wake&&wake.release();wake=null}catch(e){}}
 let unmuteEl=null;function iosUnmute(){if(unmuteEl)return;try{unmuteEl=new Audio('data:audio/wav;base64,UklGRsQPAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaAPAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA');unmuteEl.loop=true;unmuteEl.volume=.01;unmuteEl.setAttribute('playsinline','');unmuteEl.play().catch(()=>{unmuteEl=null})}catch(e){unmuteEl=null}}
 /* 第一次觸控解鎖音訊 */
 document.addEventListener('pointerdown',()=>{iosUnmute();try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume()}catch(e){}BGM.update()},{passive:true});
+function audioAlive(){try{if(unmuteEl&&unmuteEl.paused){const p=unmuteEl.play();p&&p.catch&&p.catch(()=>{})}if(actx&&actx.state!=='running'&&actx.state!=='closed'){const p=actx.resume();p&&p.catch&&p.catch(()=>{})}}catch(e){}}
+['pointerup','touchend','click'].forEach(t=>document.addEventListener(t,()=>{audioAlive();BGM.update()},{passive:true,capture:true}));
 document.addEventListener('visibilitychange',()=>{if(document.hidden){BGM.stop();TTS.stop()}else BGM.update()});
 
 /* ====== 啟動 ====== */
@@ -718,8 +720,8 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){BGM.stop()
   $('rename-ok').onclick=()=>{const t=$('rename-in').value.trim().slice(0,8);t?store.set('guestName',t):store.del('guestName');$('rename').hidden=true;renderPlayers();renderPicker()};
   $('btn-set').onclick=()=>{renderSettings();show('s-settings')};
   $('set-back').onclick=()=>{renderMap();show('s-title')};
-  $('t-sfx').onclick=()=>{muted=!muted;store.set('muted',muted?'1':'0');BGM.update();renderSettings()};
-  $('t-bgm').onclick=()=>{store.set('bgm',(store.get('bgm')||'on')==='on'?'off':'on');BGM.update();renderSettings()};
+  $('t-sfx').onclick=()=>{muted=!muted;store.set('blk_muted',muted?'1':'0');BGM.update();renderSettings()};
+  $('t-bgm').onclick=()=>{store.set('blk_bgm',(store.get('blk_bgm')||'on')==='on'?'off':'on');BGM.update();renderSettings()};
   $('t-tts').onclick=()=>{const on=(store.get('blk_tts')||'on')==='on';store.set('blk_tts',on?'off':'on');renderSettings();if(!on)TTS.say('語音開啟')};
   $('t-reset').onclick=function(){if(this.dataset.arm){store.del('blk_prog_'+curPlayer());delete this.dataset.arm;this.textContent='已重置';toast('進度已重置')}else{this.dataset.arm='1';this.textContent='再按一次確定';setTimeout(()=>{delete this.dataset.arm;this.textContent='重置進度'},3000)}};
   $('btn-home').onclick=()=>{if(!G)return goHome();ovShow({title:'要回地圖嗎？',html:'<p>這座島要從頭開始喔</p>',btns:[['繼續玩',null,'gold'],['回地圖',goHome]]})};
