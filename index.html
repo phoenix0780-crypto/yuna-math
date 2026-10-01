@@ -222,12 +222,13 @@ body.webgl .tile.sel{box-shadow:none}
 .tfslot{--dot:min(26px,7vw,3.4vh);--dgap:min(5px,1.2vw);width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:min(6px,.8vh)}
 .tfslot > *{transition:opacity .18s}
 .tfslot > *.off{opacity:.3;pointer-events:none}
-.tframe{display:grid;grid-template-columns:repeat(10,var(--dot));gap:var(--dgap);padding:5px;background:rgba(255,255,255,.10);border:2px solid rgba(255,255,255,.45);border-radius:12px;justify-content:center}
+.tframe{display:grid;grid-template-columns:repeat(5,var(--dot)) min(12px,2.6vw) repeat(5,var(--dot));gap:var(--dgap);padding:5px;background:rgba(255,255,255,.10);border:2px solid rgba(255,255,255,.45);border-radius:12px;justify-content:center}
+.tframe span:nth-child(6),.over i:nth-child(6){grid-column:7}
 .tframe span{width:var(--dot);height:var(--dot);border-radius:50%;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);transition:background .15s,transform .15s}
 .tframe span.a{background:var(--ca);border-color:var(--ca);box-shadow:0 0 8px var(--ca)}
 .tframe span.b{background:var(--cb);border-color:var(--cb);box-shadow:0 0 10px var(--cb)}
 .tframe span.pop{transform:scale(1.3)}
-.over{display:grid;grid-template-columns:repeat(10,var(--dot));gap:var(--dgap);padding:5px;justify-content:center;border:2px dashed rgba(255,255,255,.18);border-radius:12px}
+.over{display:grid;grid-template-columns:repeat(5,var(--dot)) min(12px,2.6vw) repeat(5,var(--dot));gap:var(--dgap);padding:5px;justify-content:center;border:2px dashed rgba(255,255,255,.18);border-radius:12px}
 .over i{width:var(--dot);height:var(--dot);border-radius:50%;background:rgba(255,255,255,.08);border:1px dashed rgba(255,255,255,.20)}
 .over.goal{border-style:solid;border-color:rgba(255,255,255,.45);background:rgba(255,255,255,.10)}
 .over i.g{border-style:solid;border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.10)}
@@ -355,7 +356,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v4.0';
+const VERSION='v4.1';
 const DEV=/(^|[?#&])dev(\b|$)/.test(location.search+location.hash);
 function T(){return (G&&G.sum)||10}
 function half(){const t=T();return t%2===0?t/2:0}
@@ -865,7 +866,7 @@ function shuffle(notify=true){
 function tap(r,c){
   if(G.busy||G.over||!G.board[r][c])return;
   G.idle=0;
-  if(!G.sel){G.sel=[r,c];tileAt(r,c).classList.add('sel');GL.select(r,c,true);beep(440,.05);
+  if(!G.sel){G.sel=[r,c];G.selWrong=0;tileAt(r,c).classList.add('sel');GL.select(r,c,true);beep(440,.05);
     if(G.mode==='practice'){const v=G.board[r][c];frameSet(v,0,v,v);tfMsg(`${v} 還差幾才到 ${T()}？`)}
     else if(G.lv.hint)$('diff').textContent=`還差 ${T()-G.board[r][c]}`;
     return}
@@ -877,7 +878,7 @@ function tap(r,c){
   if(adjacent&&a+b===T()){clearSel();eliminate(sr,sc,r,c);}
   else if(calm()){ // 數感：不懲罰，說明原因
     sfx.bad();[tileAt(sr,sc),tileAt(r,c)].forEach(t=>{t.classList.add('bad');setTimeout(()=>t.classList.remove('bad'),400)});
-    if(adjacent){noteWrong(a,b);frameSet(a,b,a,b);setTimeout(()=>{if(G&&!G.over&&G.sel)frameSet(a,0,a,a)},1800);tfMsg(`${a} + ${b} = ${a+b}，${a+b<T()?`還差 ${T()-(a+b)} 才到 ${T()}`:`多了 ${a+b-T()}`}`);setTimeout(()=>{if(G&&!G.over&&G.sel)tfMsg(`再找一顆跟 ${a} 湊 ${T()} 的`)},2200)}
+    if(adjacent){noteWrong(a,b);G.selWrong=(G.selWrong||0)+1;frameSet(a,b,a,b);setTimeout(()=>{if(G&&!G.over&&G.sel)frameSet(a,0,a,a)},1800);if(G.selWrong<2)tfMsg(`看看圓點，有沒有剛好到 ${T()}？`);else{tfMsg(`${a} + ${b} = ${a+b}，${a+b<T()?`還差 ${T()-(a+b)} 才到 ${T()}`:`多了 ${a+b-T()}`}`);setTimeout(()=>{if(G&&!G.over&&G.sel)tfMsg(`再找一顆跟 ${a} 湊 ${T()} 的`)},2200)}}
     else tfMsg('要選旁邊的寶石喔');
     G.wrong++;
   }
