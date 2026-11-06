@@ -279,9 +279,10 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
   <div class="sub" id="titlesub">兩顆相鄰的寶石加起來等於目標數就消除</div>
   <div class="modes" id="modes"></div>
   <div class="modehint" id="modehint"></div>
-  <button class="picker" id="picker" onclick="togglePicker()"></button>
-  <div class="drawer" id="drawer"><div class="inner">
-    <div class="sub" id="pickhint" style="margin:2px 0 6px;white-space:normal">誰在玩？</div>
+  <!-- 誰在玩：Yuna / Yoyo 直接並排顯示，不用點開（膠囊鈕藏起來，抽屜固定打開） -->
+  <button class="picker" id="picker" onclick="togglePicker()" style="display:none"></button>
+  <div class="drawer open" id="drawer"><div class="inner">
+    <div class="sub" id="pickhint" style="display:none;margin:2px 0 6px;white-space:normal">誰在玩？</div>
     <div class="players" id="players"></div>
   </div></div>
   <div class="levels" id="levels"></div>
@@ -359,7 +360,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v4.3';
+const VERSION='v4.4';
 const DEV=/(^|[?#&])dev(\b|$)/.test(location.search+location.hash);
 function T(){return (G&&G.sum)||10}
 function half(){if(G&&G.diff)return 0;const t=T();return t%2===0?t/2:0}
