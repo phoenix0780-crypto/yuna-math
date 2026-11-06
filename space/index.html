@@ -73,7 +73,7 @@ h1.h2{font-size:26px;margin:10px 0;text-shadow:0 3px 0 #a86f00}
 .drawer > .inner{overflow:hidden;min-height:0;display:flex;flex-direction:column;align-items:center}
 .drawer.open{grid-template-rows:1fr;margin-bottom:14px}
 .drawer.open > .inner{padding:8px}
-.players{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 8px;justify-items:center;margin:2px 0 4px;width:100%;max-width:400px}
+.players{display:grid;grid-template-columns:repeat(2,minmax(0,96px));justify-content:center;gap:8px 24px;justify-items:center;margin:2px 0 4px;width:100%;max-width:400px}
 .pl{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--cream);font-size:14px;font-weight:700;opacity:.5;padding:4px;max-width:76px}
 .pl .face{width:50px;height:50px;font-size:28px}
 .pl.on{opacity:1}.pl.on .face{box-shadow:0 0 0 4px var(--gold)}
@@ -298,7 +298,7 @@ h1.h2{font-size:26px;margin:10px 0;text-shadow:0 3px 0 #a86f00}
 <div class="ver" id="ver"></div>
 
 <script>
-const VERSION='v1.3';
+const VERSION='v1.4';
 const $=id=>document.getElementById(id);
 const DEV=/(^|[?#&])dev(\b|$)/.test(location.search+location.hash);
 /* ====== 儲存（沿用前作，localStorage 失敗時退回記憶體） ====== */
@@ -322,7 +322,7 @@ const ROLES=[
   {id:'boss',name:'爸爸大魔王',emoji:DINO_SVG.replace(/#3e9c5c/g,'#b8302c').replace(/#2a6e40/g,'#6b1512').replace(/#8f2d2d/g,'#4a0f0f').replace('#dff5e1','#ffe1dc'),hint:'最終關'},
   {id:'angel',name:'媽媽天使',emoji:'👩',hint:'鼓勵'},
   {id:'guest',name:'其他人',emoji:SMILEY_SVG,hint:'自訂'},
-  {id:'turtle',name:'李宥穎',emoji:TURTLE_SVG,hint:'海龜'},
+  {id:'turtle',name:'Yoyo',emoji:TURTLE_SVG,hint:'海龜'},
   {id:'princess2',name:'李亞恩',emoji:PRINCESS2_SVG,hint:'公主'},
   {id:'robot',name:'蕭阿伯',emoji:ROBOT_SVG,hint:'機器人'}
 ];
@@ -330,9 +330,10 @@ function faceHTML(id){return ROLES.find(x=>x.id===id).emoji}
 function renderFace(el,id){el.innerHTML=faceHTML(id)}
 
 /* ====== 玩家（沿用前作；player / guestName / pickedOnce 三鍵與其他遊戲共用，不加前綴） ====== */
-const PLAYERS=[{id:'princess',name:'Yuna'},{id:'monster',name:'Bryson'},{id:'angel',name:'媽媽'},{id:'boss',name:'爸爸'},{id:'turtle',name:'李宥穎'},{id:'princess2',name:'李亞恩'},{id:'robot',name:'蕭阿伯'},{id:'guest',name:'其他人'}];
+/* 誰在玩只留 Yuna 和 Yoyo（Yoyo = 李宥穎，沿用 turtle 的進度與海龜頭像）；其他人的舊紀錄留在排行榜 */
+const PLAYERS=[{id:'princess',name:'Yuna'},{id:'turtle',name:'Yoyo'}];
 function playerName(id){return id==='guest'?(store.get('guestName')||'其他人'):(PLAYERS.find(p=>p.id===id)||PLAYERS[0]).name}
-function curPlayer(){return store.get('player')||'princess'}
+function curPlayer(){const p=store.get('player');return PLAYERS.some(x=>x.id===p)?p:'princess'}
 
 /* ====== 關卡與設定 ====== */
 const LEVELS=[
@@ -390,8 +391,8 @@ function showBoard(){const sel=$('lb-level');if(sel.options.length===1)LEVELS.fo
 function renderBoard(){const f=$('lb-level').value,box=$('lb');let b=getBoard();if(f!=='all')b=b.filter(e=>e.level==f);b=b.slice(0,10);
   box.innerHTML='<div class="row head"><span>#</span><span></span><span>玩家 / 關卡 / 時間</span><span>結果</span><span class="sc">分數</span></div>';
   if(!b.length){box.innerHTML+='<div class="emp">還沒有紀錄，去打隕石吧！</div>';return}
-  b.forEach((e,i)=>{const p=PLAYERS.find(x=>x.id===e.player)||PLAYERS[0];const me=e.player===curPlayer();const nm=e.player==='guest'?(e.name||playerName('guest')):p.name;const lv=LEVELS[e.level-1]||LEVELS[0];
-    box.innerHTML+=`<div class="row${me?' me':''}"><span class="rk">${i+1}</span><div class="face">${faceHTML(p.id)}</div><span>${nm}<br><small style="opacity:.7">${lv.name} · ${e.date}</small></span><span class="rs">${e.result==='win'?'★'.repeat(e.stars):'護盾用完'}</span><span class="sc">${e.score}</span></div>`})}
+  b.forEach((e,i)=>{const p=PLAYERS.find(x=>x.id===e.player);const me=e.player===curPlayer();const nm=p?p.name:(e.name||'?');const lv=LEVELS[e.level-1]||LEVELS[0];
+    box.innerHTML+=`<div class="row${me?' me':''}"><span class="rk">${i+1}</span><div class="face">${faceHTML(ROLES.some(r=>r.id===e.player)?e.player:'guest')}</div><span>${nm}<br><small style="opacity:.7">${lv.name} · ${e.date}</small></span><span class="rs">${e.result==='win'?'★'.repeat(e.stars):'護盾用完'}</span><span class="sc">${e.score}</span></div>`})}
 let clearArm=0;
 function clearBoard(){const b=$('btn-clear');if(!clearArm){b.textContent='再按一次就清除';clearArm=setTimeout(()=>{clearArm=0;b.textContent='清除排行榜'},3000);return}
   clearTimeout(clearArm);clearArm=0;b.textContent='清除排行榜';store.del('sp_board');renderBoard();toast('已清除')}
