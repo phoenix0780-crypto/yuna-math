@@ -46,7 +46,7 @@ button{font-family:inherit;border:0;cursor:pointer}
 .screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto;overflow:hidden}
 .screen.on{display:flex}
 #s-settings,#s-board{overflow-y:auto;justify-content:flex-start}
-#s-title{overflow-y:auto;justify-content:center;padding-bottom:calc(58px + env(safe-area-inset-bottom))}
+#s-title{overflow-y:auto;justify-content:safe center;padding-bottom:calc(58px + env(safe-area-inset-bottom))}
 #s-title > *{flex:0 0 auto}
 #s-game.on{display:grid;grid-template-areas:"hud" "track" "grid" "diff" "tool";grid-template-rows:auto auto minmax(0,1fr) auto auto;justify-items:center;align-content:stretch;gap:2px;overflow:hidden}
 #s-game .gridwrap{align-self:start;min-height:0}
@@ -228,6 +228,9 @@ body.webgl .tile.sel{box-shadow:none}
 .tframe span.a{background:var(--ca);border-color:var(--ca);box-shadow:0 0 8px var(--ca)}
 .tframe span.b{background:var(--cb);border-color:var(--cb);box-shadow:0 0 10px var(--cb)}
 .tframe span.pop{transform:scale(1.3)}
+.tframe span.x{position:relative;background:transparent;border:2px dashed var(--ca);box-shadow:none}
+.tframe span.x::after{content:'';position:absolute;inset:6%;background:linear-gradient(45deg,transparent 41%,var(--danger) 41%,var(--danger) 59%,transparent 59%),linear-gradient(-45deg,transparent 41%,var(--danger) 41%,var(--danger) 59%,transparent 59%)}
+#s-game.minus .over{display:none}
 .over{display:grid;grid-template-columns:repeat(5,var(--dot)) min(12px,2.6vw) repeat(5,var(--dot));gap:var(--dgap);padding:5px;justify-content:center;border:2px dashed rgba(255,255,255,.18);border-radius:12px}
 .over i{width:var(--dot);height:var(--dot);border-radius:50%;background:rgba(255,255,255,.08);border:1px dashed rgba(255,255,255,.20)}
 .over.goal{border-style:solid;border-color:rgba(255,255,255,.45);background:rgba(255,255,255,.10)}
@@ -273,7 +276,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 <!-- 標題頁 -->
 <div class="screen on" id="s-title">
   <h1 style="font-size:clamp(32px,9vw,52px);text-align:center;line-height:1.2">&lt;&lt; 恐怖大怪獸 &gt;&gt;</h1>
-  <div class="sub">兩顆相鄰的寶石加起來等於目標數就消除</div>
+  <div class="sub" id="titlesub">兩顆相鄰的寶石加起來等於目標數就消除</div>
   <div class="modes" id="modes"></div>
   <div class="modehint" id="modehint"></div>
   <button class="picker" id="picker" onclick="togglePicker()"></button>
@@ -356,11 +359,15 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v4.1';
+const VERSION='v4.2';
 const DEV=/(^|[?#&])dev(\b|$)/.test(location.search+location.hash);
 function T(){return (G&&G.sum)||10}
-function half(){const t=T();return t%2===0?t/2:0}
-function vrange(){const t=T();return [Math.max(1,t-9),Math.min(9,t-1)]}
+function half(){if(G&&G.diff)return 0;const t=T();return t%2===0?t/2:0}
+function vrange(){if(G&&G.diff)return [1,9];const t=T();return [Math.max(1,t-9),Math.min(9,t-1)]}
+/* 減法模式：相鄰兩顆「大的減小的」= G.diff 就消除；其他模式是兩顆加起來 = T() */
+function mate(a,b){if(!a||!b)return false;return G&&G.diff?Math.abs(a-b)===G.diff:a+b===T()}
+function mates(v){if(!(G&&G.diff))return [T()-v];const d=G.diff,o=[];if(v-d>=1)o.push(v-d);if(v+d<=9)o.push(v+d);return o}
+function mateVal(v){const m=mates(v);return m.length?m[Math.floor(Math.random()*m.length)]:v}
 const CRASHED=(()=>{try{const c=+localStorage.getItem('crashCount')||0;const bad=localStorage.getItem('booting')==='1';const n=bad?c+1:0;localStorage.setItem('crashCount',n);localStorage.setItem('booting','1');setTimeout(()=>localStorage.setItem('booting','0'),8000);window.addEventListener('pagehide',()=>{try{localStorage.setItem('booting','0')}catch(e){}});return n>=2}catch(e){return false}})();document.getElementById('ver').textContent=VERSION;
 /* ====== 儲存（localStorage 失敗時退回記憶體） ====== */
 const mem={};
@@ -411,18 +418,19 @@ function renderPlayers(){const b=$('players');b.innerHTML='';
 function stamp(){const d=new Date();const p=n=>String(n).padStart(2,'0');return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`}
 function getBoard(){try{return JSON.parse(store.get('board')||'[]')}catch(e){return []}}
 function addScore(entry){const b=getBoard();b.push(entry);b.sort((x,y)=>y.score-x.score);store.set('board',JSON.stringify(b.slice(0,50)));return b.findIndex(e=>e===entry)+1}
-function showBoard(){const sel=$('lb-level');if(sel.options.length===1)LEVELS.forEach((lv,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=lv.name;sel.appendChild(o)});renderBoard();show('s-board')}
-function renderBoard(){const f=$('lb-level').value,box=$('lb');let b=getBoard();if(f!=='all')b=b.filter(e=>e.level==f);b=b.slice(0,10);
+function showBoard(){const sel=$('lb-level');if(sel.options.length===1){LEVELS.forEach((lv,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=lv.name;sel.appendChild(o)});MLEVELS.forEach((lv,i)=>{const o=document.createElement('option');o.value='m'+(i+1);o.textContent='減法 '+lv.name;sel.appendChild(o)})}renderBoard();show('s-board')}
+function renderBoard(){const f=$('lb-level').value,box=$('lb');let b=getBoard();if(f!=='all')b=b.filter(e=>f[0]==='m'?(e.mode==='minus'&&'m'+e.level===f):(e.mode!=='minus'&&e.level==f));b=b.slice(0,10);
   box.innerHTML='<div class="row head"><span>#</span><span></span><span>玩家 / 關卡 / 時間</span><span>結果</span><span class="sc">分數</span></div>';
   if(!b.length){box.innerHTML+='<div class="emp">還沒有紀錄，去打敗暴龍吧！</div>';return}
   b.forEach((e,i)=>{const p=PLAYERS.find(x=>x.id===e.player)||PLAYERS[0];const me=e.player===curPlayer();const nm=e.player==='guest'?(e.name||playerName('guest')):p.name;
-    box.innerHTML+=`<div class="row${me?' me':''}"><span class="rk">${i+1}</span><div class="face">${faceHTML(p.id)}</div><span>${nm}<br><small style="opacity:.7">${LEVELS[e.level-1].name} · ${({practice:'數感',duo:'親子'})[e.mode]||'冒險'} · ${e.date}</small></span><span style="color:#ffd166;font-size:13px">${e.result==='win'||!e.result?('★'.repeat(e.stars)||'過關'):(e.result==='lose'?'😱 被抓':'🚪 中離')}</span><span class="sc">${e.score}</span></div>`})}
+    box.innerHTML+=`<div class="row${me?' me':''}"><span class="rk">${i+1}</span><div class="face">${faceHTML(p.id)}</div><span>${nm}<br><small style="opacity:.7">${((e.mode==='minus'?MLEVELS:LEVELS)[e.level-1]||{name:'?'}).name} · ${({practice:'數感',duo:'親子',minus:'減法'})[e.mode]||'冒險'} · ${e.date}</small></span><span style="color:#ffd166;font-size:13px">${e.result==='win'||!e.result?('★'.repeat(e.stars)||'過關'):(e.result==='lose'?'😱 被抓':'🚪 中離')}</span><span class="sc">${e.score}</span></div>`})}
 function clearBoard(){if(!confirm('確定清除所有排行榜紀錄？'))return;store.del('board');renderBoard();toast('已清除')}
 /* ====== 遊戲模式 ====== */
-const MODES=[{id:'practice',name:'🌱 數感',hint:'建議國小一年級以上適合｜想想還差幾才到目標數？先湊 10，後面湊 11～15'},{id:'adventure',name:'🦖 冒險',hint:'建議國小三年級以上適合｜暴龍會追公主，消得越快牠退越遠'}];
+const MODES=[{id:'practice',name:'🌱 數感',hint:'建議國小一年級以上適合｜想想還差幾才到目標數？先湊 10，後面湊 11～15'},{id:'minus',name:'➖ 減法',hint:'建議國小一年級（第 8 單元 10 以內的減法）｜圓點會拿走小的數，看剩幾個'},{id:'adventure',name:'🦖 冒險',hint:'建議國小三年級以上適合｜暴龍會追公主，消得越快牠退越遠'}];
 function curMode(){const m=store.get('mode');return MODES.some(x=>x.id===m)?m:'practice'}
-function renderModes(){const b=$('modes');b.innerHTML='';MODES.forEach(m=>{const d=document.createElement('button');d.className=curMode()===m.id?'on':'';d.textContent=m.name;d.onclick=()=>{store.set('mode',m.id);renderModes()};b.appendChild(d)});
+function renderModes(){const b=$('modes');b.innerHTML='';MODES.forEach(m=>{const d=document.createElement('button');d.className=curMode()===m.id?'on':'';d.textContent=m.name;d.onclick=()=>{store.set('mode',m.id);loadProgress();renderLevels();renderModes()};b.appendChild(d)});
   $('modehint').textContent=MODES.find(m=>m.id===curMode()).hint;
+  $('titlesub').textContent=curMode()==='minus'?'兩顆相鄰的寶石，大的減小的等於目標數就消除':'兩顆相鄰的寶石加起來等於目標數就消除';
   renderPlayers();renderPicker()}
 const calm=()=>G&&G.mode!=='adventure';
 function tfMsg(t){$('tfmsg').textContent=t}
@@ -442,12 +450,25 @@ function showFrame(a,b){const f=$('tframe'),tok=++frameTok;f.classList.remove('o
   const live=()=>tok===frameTok&&G&&!G.over&&!G.sel;
   setTimeout(()=>{if(live())tfMsg(`${a} + ${b} = ${T()} ✔`)},a*D+b*D+200);
   setTimeout(()=>{if(tok===frameTok)frameClear();if(live())tfMsg('點一顆寶石')},a*D+b*D+2800)}
+function frameMinus(a,b,va){frameSet(a,0,va,va);for(let j=0;j<b&&j<a;j++)cellAt(a-1-j).classList.add('x')}
+function showMinus(a,b){ // 減法：先放 a 顆（大的），再從右邊拿走 b 顆（小的），剩下的就是差
+  const tok=++frameTok;$('tframe').classList.remove('off');frameSet(0,0,a,a);
+  const S=45,X=120,t0=a*S+250+b*X,live=()=>tok===frameTok&&G&&!G.over&&!G.sel;
+  for(let i=0;i<a;i++)setTimeout(()=>{if(tok!==frameTok)return;const e=cellAt(i);e.className='a pop';setTimeout(()=>e.classList.remove('pop'),120);beep(500+i*40,.05)},i*S);
+  for(let j=0;j<b;j++)setTimeout(()=>{if(tok!==frameTok)return;cellAt(a-1-j).className='a x';beep(820-j*45,.06)},a*S+250+j*X);
+  setTimeout(()=>{if(tok!==frameTok)return;for(let i=0;i<a-b;i++){const e=cellAt(i);e.classList.add('pop');setTimeout(()=>e.classList.remove('pop'),260)}if(live())tfMsg(`${a} − ${b} = ${a-b} ✔`)},t0+120);
+  setTimeout(()=>{if(tok===frameTok)frameClear();if(live())tfMsg('點一顆寶石')},t0+2700)}
+function minusTut(){const d=G.diff,sm=d<=4?5:4,bg=sm+d;
+  return `<div class="tut">1. 先點一顆寶石，圓點會顯示它有多少<br>2. 找<b>旁邊</b>一顆，<b>大的減小的 = ${d}</b>（每顆旁邊都一定有搭檔）<br>3. 例如：<b>${bg} − ${sm} = ${d}</b>，${bg} 和 ${sm} 一起碎掉<br>4. 碎掉時圓點會<b>拿走</b>小的數，看看剩幾個<br>5. 沒有暴龍，慢慢想沒關係！`+(G.lv.mix?'<br>6. 魔王關：每消 3 對會<b>換一個差</b>':'')+'</div>'}
+function switchDiff(){ // 減法魔王：每消 3 對換一個差，整盤重排
+  const o=G.lv.mix.filter(x=>x!==G.diff);G.diff=o[Math.floor(Math.random()*o.length)];G.bag=null;
+  pairFill();drawBoard();GL.rebuildSoon();$('hud-level').textContent='👑 差 '+G.diff;toast('換成差 '+G.diff+'！')}
 function highlightPartners(r,c){const v=G.board[r][c],{cols,rows}=G;let n=0;
-  for(let rr=0;rr<rows;rr++)for(let cc=0;cc<cols;cc++)if(G.board[rr][cc]===T()-v&&isAdj(rr,cc,r,c)){tileAt(rr,cc).classList.add('hint');n++}
+  for(let rr=0;rr<rows;rr++)for(let cc=0;cc<cols;cc++)if(mate(G.board[rr][cc],v)&&isAdj(rr,cc,r,c)){tileAt(rr,cc).classList.add('hint');n++}
   return n}
 function needAdj(){return true}
 function isAdj(r1,c1,r2,c2){const dr=Math.abs(r1-r2),dc=Math.abs(c1-c2);return diagOn()?(dr<=1&&dc<=1&&dr+dc>0):(dr+dc===1)}
-function noteWrong(a,b){const k=[Math.min(a,b),Math.max(a,b)].join('+');G.wrongPairs=G.wrongPairs||{};G.wrongPairs[k]=(G.wrongPairs[k]||0)+1}
+function noteWrong(a,b){const k=G.diff?Math.max(a,b)+'−'+Math.min(a,b):[Math.min(a,b),Math.max(a,b)].join('+');G.wrongPairs=G.wrongPairs||{};G.wrongPairs[k]=(G.wrongPairs[k]||0)+1}
 
 /* ====== 關卡 ====== */
 /* stepMs: 怪獸每走 1 格的毫秒; path: 路長; target: 要消幾對; hint: 顯示「還差?」; penalty: 配錯怪獸前進; five: 出 5 的權重(1=正常) */
@@ -466,9 +487,19 @@ const LEVELS=[
   {cols:7,rows:8,stepMs:2800,path:20,target:25,hint:false,penalty:true, five:.5,  name:'湊 14',sum:14},
   {cols:7,rows:9,stepMs:2200,path:15,target:30,hint:false,penalty:true, five:.5,  name:'湊 15',sum:15,boss:true}
 ];
+/* 減法（南一 1上 第 8 單元 10 以內的減法）：相鄰兩顆大的減小的 = 差；寶石仍是 1~9；進度與數感/冒險分開存 */
+const MLEVELS=[
+  {diff:1,target:10,name:'差 1'},
+  {diff:2,target:10,name:'差 2'},
+  {diff:3,target:12,name:'差 3'},
+  {diff:4,target:12,name:'差 4'},
+  {diff:5,target:12,name:'差 5'},
+  {mix:[1,2,3,4,5],target:15,name:'減法魔王',boss:true}
+].map(l=>Object.assign({cols:6,rows:7,stepMs:4000,path:20,hint:false,penalty:false,five:.5},l));
+function LVS(m){return (m||curMode())==='minus'?MLEVELS:LEVELS}
 let progress={unlocked:1,stars:{}};
-function progKey(){return 'progress_'+curPlayer()}
-function lastKey(){return 'lastLevel_'+curPlayer()}
+function progKey(){return (curMode()==='minus'?'mprogress_':'progress_')+curPlayer()}
+function lastKey(){return (curMode()==='minus'?'mlastLevel_':'lastLevel_')+curPlayer()}
 function loadProgress(){
   try{const old=store.get('progress');if(old&&!store.get('progress_princess')){store.set('progress_princess',old);store.del('progress')}
       const ol=store.get('lastLevel');if(ol!==null&&store.get('lastLevel_princess')===null){store.set('lastLevel_princess',ol);store.del('lastLevel')}}catch(e){}
@@ -552,11 +583,11 @@ function goTitle(){if(G&&!G.over)recordRun('quit');stopGame();document.body.clas
 function renderLevels(){
   const lastL=store.get(lastKey())!==null?+store.get(lastKey()):-1;
   const fresh=lastL<0&&progress.unlocked<=1&&!Object.keys(progress.stars).length;
-  const guideIdx=fresh?0:(lastL>=0&&lastL<LEVELS.length?lastL:-1);
+  const L=LVS();const guideIdx=fresh?0:(lastL>=0&&lastL<L.length?lastL:-1);
   $('guidetip').style.display=fresh?'':'none';
-  $('guidetip').textContent='👆 按「第一關」開始玩！';
+  $('guidetip').textContent='👆 按「'+L[0].name+'」開始玩！';
   const box=$('levels');box.innerHTML='';
-  LEVELS.forEach((lv,i)=>{
+  L.forEach((lv,i)=>{
     const n=i+1,locked=n>progress.unlocked&&!DEV,st=progress.stars[n]||0;
     const b=document.createElement('button');
     b.className='lv'+(locked?' locked':'')+(lv.boss?' boss':'');
@@ -571,29 +602,29 @@ function renderLevels(){
 /* ====== 遊戲狀態 ====== */
 let G=null;
 function startLevel(i){
-  const lv=LEVELS[i];
+  const lv=LVS()[i];
   const cm=curMode();const sz=cm==='adventure'?{cols:lv.cols,rows:lv.rows}:CALM_SIZE;
-  G={i,lv,sum:lv.sum||10,mode:cm,cols:sz.cols,rows:sz.rows,board:[],sel:null,wrongPairs:{},cleared:0,mpos:0,timer:null,idle:0,lastClear:0,combo:0,hits:0,energy:0,busy:false,over:false,wrong:0,angelCount:0,score:0,start:Date.now()};
-  $('hud-level').textContent=lv.name;$('hud-target').textContent=lv.target;$('hud-cleared').textContent=0;$('hud-combo').textContent='';$('hud-score').textContent=0;
+  G={i,lv,sum:lv.sum||10,diff:lv.mix?lv.mix[Math.floor(Math.random()*lv.mix.length)]:lv.diff,mode:cm,cols:sz.cols,rows:sz.rows,board:[],sel:null,wrongPairs:{},cleared:0,mpos:0,timer:null,idle:0,lastClear:0,combo:0,hits:0,energy:0,busy:false,over:false,wrong:0,angelCount:0,score:0,start:Date.now()};
+  $('hud-level').textContent=lv.mix?'👑 差 '+G.diff:lv.name;$('hud-target').textContent=lv.target;$('hud-cleared').textContent=0;$('hud-combo').textContent='';$('hud-score').textContent=0;
   $('mute').textContent=muted?'🔇 靜音':'🔊 聲音';
   renderFace($('princess-face'),curPlayer());renderFace($('monster-face'),lv.boss?'boss':'monster');renderFace($('angel-face'),'angel');
   $('princess').querySelector('.tag').textContent=playerName(curPlayer());
   $('monster').classList.toggle('boss',!!lv.boss);$('monster-tag').textContent=lv.boss?'爸爸大魔王':'Bryson';$('m-crown').style.display=lv.boss?'':'none';
   $('overlay').classList.remove('on');$('angel').classList.remove('on');document.body.classList.remove('danger');
-  $('s-game').classList.toggle('calm',G.mode!=='adventure');$('tframe').classList.add('off');
+  $('s-game').classList.toggle('calm',G.mode!=='adventure');$('s-game').classList.toggle('minus',!!G.diff);$('tframe').classList.add('off');
   frameClear();$('tframe').classList.remove('off');
-  if(G.mode==='practice')tfMsg('點一顆寶石');
+  if(calm())tfMsg('點一顆寶石');
   show('s-game');newBoard();settle();store.set(lastKey(),i);requestWake();$('btn-pause').textContent='⏸ 暫停';
   const begin=()=>{if(calm()){G.busy=false;G.timer=setInterval(tick,100);return}say('p',lv.boss?'爸爸大魔王來了！快！':`快幫我湊 ${T()}！`,1500);countdown(()=>{if(G&&!G.over)G.timer=setInterval(tick,100)})};
-  if(!store.get('tutorialDone')||(G.sum>10&&!store.get('tutorialDone11'))){showTutorial(begin)}else begin();
+  if(G.diff?!store.get('tutorialMinus'):(!store.get('tutorialDone')||(G.sum>10&&!store.get('tutorialDone11')))){showTutorial(begin)}else begin();
 }
 function countdown(done){let n=3;G.busy=true;G.cd=true;const go=()=>{if(!G||G.over)return;if(G.cdPaused){setTimeout(go,200);return}if(n===0){G.busy=false;G.cd=false;done();return}
   const d=document.createElement('div');d.className='count';d.textContent=n;$('s-game').appendChild(d);beep(n===1?880:660,.15);setTimeout(()=>d.remove(),900);n--;setTimeout(go,900)};go()}
 function showTutorial(done){G.busy=true;$('ov-stars').textContent='💎';$('ov-title').textContent='怎麼玩';
-  $('ov-text').innerHTML=curMode()==='adventure'
+  $('ov-text').innerHTML=G.diff?minusTut():curMode()==='adventure'
     ?`<div class="tut">1. 點一顆寶石再點<b>旁邊</b>那顆（含<b>斜的</b>），或直接<b>滑過去</b><br>2. 兩個數字<b>加起來 = ${T()}</b> 就會碎掉<br>3. 每碎一對，暴龍就<b>後退</b><br>4. 暴龍抓到 Yuna 就輸了<br>5. 消滿目標數就過關！</div>`
     :`<div class="tut">1. 先點一顆寶石，圓點會顯示它有多少<br>2. 想想<b>還差幾才到 ${T()}</b><br>3. 點<b>旁邊</b>那顆湊得成 ${T()} 的（每顆旁邊都一定有搭檔）<br>4. 兩顆一起碎掉，圓點會告訴你怎麼湊成 ${T()}<br>5. 沒有暴龍，慢慢想沒關係！</div>`;
-  $('ov-family').innerHTML='';const b=$('ov-btn');b.textContent='我知道了！';b.onclick=()=>{store.set('tutorialDone','1');if(G.sum>10)store.set('tutorialDone11','1');$('overlay').classList.remove('on');$('ov-text').textContent='';done()};$('overlay').classList.add('on')}
+  $('ov-family').innerHTML='';const b=$('ov-btn');b.textContent='我知道了！';b.onclick=()=>{if(G.diff)store.set('tutorialMinus','1');else{store.set('tutorialDone','1');if(G.sum>10)store.set('tutorialDone11','1')}$('overlay').classList.remove('on');$('ov-text').textContent='';done()};$('overlay').classList.add('on')}
 function stopGame(){if(G){clearInterval(G.timer);G.over=true;G.timer=null}releaseWake()}
 function pauseGame(){if(!G||G.over)return;if(G.cd){G.cdPaused=true}if(G.timer){clearInterval(G.timer);G.timer=null}$('btn-pause').textContent='▶ 繼續'}
 function resumeGame(){if(!G||G.over)return;if(G.cd){G.cdPaused=false}else if(!G.timer)G.timer=setInterval(tick,100);$('btn-pause').textContent='⏸ 暫停'}
@@ -742,7 +773,7 @@ const MATS={
 
 /* ====== 盤面 ====== */
 // 洗牌袋：每一輪 1/9、2/8、3/7、4/6 各出現同樣次數，5 依關卡權重；避免某組合連續大量出現
-function refillBag(lv){const t=lv.sum||10,b=[],lo=Math.max(1,t-9);for(let k=0;k<2;k++)for(let a=lo;a*2<t;a++)b.push(a,t-a);if(t%2===0){const f=Math.round(lv.five*2);for(let k=0;k<f;k++)b.push(t/2)}
+function refillBag(lv){const t=lv.sum||10,b=[],lo=Math.max(1,t-9);if(G&&G.diff){for(let k=0;k<2;k++)for(let x=1;x+G.diff<=9;x++)b.push(x,x+G.diff)}else{for(let k=0;k<2;k++)for(let a=lo;a*2<t;a++)b.push(a,t-a);if(t%2===0){const f=Math.round(lv.five*2);for(let k=0;k<f;k++)b.push(t/2)}}
   for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}G.bag=b}
 function diagOn(){return (store.get('diag')||'on')==='on'}
 function fiveCount(){const h=half();if(!h)return 0;let n=0;for(const row of G.board)if(row)for(const v of row)if(v===h)n++;return n}
@@ -767,13 +798,13 @@ function pairFill(){
   }
   const val={};for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const p=id[r][c];
     if(!(p in val)){const a=rnd(G.lv);val[p]=a;G.board[r][c]=a}
-    else G.board[r][c]=T()-val[p]}
+    else G.board[r][c]=mateVal(val[p])}
   if(!limitPartners()&&(G.fillTries=(G.fillTries||0)+1)<25)pairFill();else G.fillTries=0;
 }
 const MAXP=2; // 數感：每顆寶石旁邊最多 2 顆可配對
 function nbrs(r,c){const {cols,rows}=G;const off=diagOn()?[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]]:[[-1,0],[1,0],[0,-1],[0,1]];
   const out=[];for(const [dy,dx] of off){const r2=r+dy,c2=c+dx;if(r2>=0&&r2<rows&&c2>=0&&c2<cols)out.push([r2,c2])}return out}
-function partnerCount(r,c){const v=G.board[r][c];if(!v)return 0;let n=0;for(const [r2,c2] of nbrs(r,c))if(G.board[r2][c2]===T()-v)n++;return n}
+function partnerCount(r,c){const v=G.board[r][c];if(!v)return 0;let n=0;for(const [r2,c2] of nbrs(r,c))if(mate(G.board[r2][c2],v))n++;return n}
 function okCell(r,c){const n=partnerCount(r,c);return n>=1&&n<=MAXP}
 function limitPartners(){ // 把「搭檔太多」的情況修掉，維持每顆 1~MAXP 個
   const {cols,rows}=G;
@@ -781,10 +812,10 @@ function limitPartners(){ // 把「搭檔太多」的情況修掉，維持每顆
     let bad=null;for(let r=0;r<rows&&!bad;r++)for(let c=0;c<cols;c++)if(G.board[r][c]&&partnerCount(r,c)>MAXP){bad=[r,c];break}
     if(!bad)return true;
     const [r,c]=bad,v=G.board[r][c];
-    const cands=nbrs(r,c).filter(([r2,c2])=>G.board[r2][c2]===T()-v).sort(()=>Math.random()-.5);
+    const cands=nbrs(r,c).filter(([r2,c2])=>mate(G.board[r2][c2],v)).sort(()=>Math.random()-.5);
     let fixed=false;
     for(const [r2,c2] of cands){const old=G.board[r2][c2];
-      for(let t=0;t<12&&!fixed;t++){const [lo,hi]=vrange(),nv=lo+Math.floor(Math.random()*(hi-lo+1));if(nv===old||nv===T()-v)continue;
+      for(let t=0;t<12&&!fixed;t++){const [lo,hi]=vrange(),nv=lo+Math.floor(Math.random()*(hi-lo+1));if(nv===old||mate(nv,v))continue;
         G.board[r2][c2]=nv;
         if(okCell(r2,c2)&&nbrs(r2,c2).every(([a,b])=>okCell(a,b)))fixed=true;else G.board[r2][c2]=old}
       if(fixed)break}
@@ -796,7 +827,7 @@ function partnerOf(r,c){
   const v=G.board[r][c];if(!v)return null;const {cols,rows}=G;
   const off=diagOn()?[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]]:[[-1,0],[1,0],[0,-1],[0,1]];
   for(const [dy,dx] of off){const r2=r+dy,c2=c+dx;if(r2<0||r2>=rows||c2<0||c2>=cols)continue;
-    if(G.board[r2][c2]===T()-v)return [r2,c2]}
+    if(mate(G.board[r2][c2],v))return [r2,c2]}
   return null;
 }
 function orphanNear(r,c,skip){
@@ -808,10 +839,10 @@ function orphanNear(r,c,skip){
 }
 function refillPair(p1,p2){
   const o1=orphanNear(p1[0],p1[1],p2),o2=orphanNear(p2[0],p2[1],p1);
-  if(o1&&o2){G.board[p1[0]][p1[1]]=T()-G.board[o1[0]][o1[1]];G.board[p2[0]][p2[1]]=T()-G.board[o2[0]][o2[1]]}
-  else if(o1){const v=T()-G.board[o1[0]][o1[1]];G.board[p1[0]][p1[1]]=v;G.board[p2[0]][p2[1]]=T()-v}
-  else if(o2){const v=T()-G.board[o2[0]][o2[1]];G.board[p2[0]][p2[1]]=v;G.board[p1[0]][p1[1]]=T()-v}
-  else{const a=rnd(G.lv);G.board[p1[0]][p1[1]]=a;G.board[p2[0]][p2[1]]=T()-a}
+  if(o1&&o2){G.board[p1[0]][p1[1]]=mateVal(G.board[o1[0]][o1[1]]);G.board[p2[0]][p2[1]]=mateVal(G.board[o2[0]][o2[1]])}
+  else if(o1){const v=mateVal(G.board[o1[0]][o1[1]]);G.board[p1[0]][p1[1]]=v;G.board[p2[0]][p2[1]]=mateVal(v)}
+  else if(o2){const v=mateVal(G.board[o2[0]][o2[1]]);G.board[p2[0]][p2[1]]=v;G.board[p1[0]][p1[1]]=mateVal(v)}
+  else{const a=rnd(G.lv);G.board[p1[0]][p1[1]]=a;G.board[p2[0]][p2[1]]=mateVal(a)}
   const {cols,rows}=G;for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(G.board[r][c]&&!partnerOf(r,c)){pairFill();return}
   if(!limitPartners())pairFill();
 }
@@ -849,7 +880,7 @@ function countMoves(list){
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const v=G.board[r][c];if(!v)continue;
     const D=dg?[[0,1],[1,0],[1,1],[1,-1]]:[[0,1],[1,0]];
     for(const [dr,dc] of D){const r2=r+dr,c2=c+dc;if(r2<0||r2>=rows||c2<0||c2>=cols)continue;
-      const w=G.board[r2][c2];if(w&&v+w===T()){n++;if(list)list.push([r,c,r2,c2])}}}
+      const w=G.board[r2][c2];if(w&&mate(v,w)){n++;if(list)list.push([r,c,r2,c2])}}}
   return n;
 }
 function shuffle(notify=true){
@@ -867,7 +898,8 @@ function tap(r,c){
   if(G.busy||G.over||!G.board[r][c])return;
   G.idle=0;
   if(!G.sel){G.sel=[r,c];G.selWrong=0;tileAt(r,c).classList.add('sel');GL.select(r,c,true);beep(440,.05);
-    if(G.mode==='practice'){const v=G.board[r][c];frameSet(v,0,v,v);tfMsg(`${v} 還差幾才到 ${T()}？`)}
+    if(G.diff){++frameTok;const v=G.board[r][c];frameSet(v,0,v,v);tfMsg(`${v} 和誰差 ${G.diff}？`)}
+    else if(G.mode==='practice'){const v=G.board[r][c];frameSet(v,0,v,v);tfMsg(`${v} 還差幾才到 ${T()}？`)}
     else if(G.lv.hint)$('diff').textContent=`還差 ${T()-G.board[r][c]}`;
     return}
   const [sr,sc]=G.sel;
@@ -875,10 +907,13 @@ function tap(r,c){
   const dr=Math.abs(sr-r),dc=Math.abs(sc-c);
   const adjacent=needAdj()?(diagOn()?(dr<=1&&dc<=1&&dr+dc>0):(dr+dc===1)):true;
   const a=G.board[sr][sc],b=G.board[r][c];
-  if(adjacent&&a+b===T()){clearSel();eliminate(sr,sc,r,c);}
+  if(adjacent&&mate(a,b)){clearSel();eliminate(sr,sc,r,c);}
   else if(calm()){ // 數感：不懲罰，說明原因
     sfx.bad();[tileAt(sr,sc),tileAt(r,c)].forEach(t=>{t.classList.add('bad');setTimeout(()=>t.classList.remove('bad'),400)});
-    if(adjacent){noteWrong(a,b);G.selWrong=(G.selWrong||0)+1;frameSet(a,b,a,b);setTimeout(()=>{if(G&&!G.over&&G.sel)frameSet(a,0,a,a)},1800);if(G.selWrong<2)tfMsg(`看看圓點，有沒有剛好到 ${T()}？`);else{tfMsg(`${a} + ${b} = ${a+b}，${a+b<T()?`還差 ${T()-(a+b)} 才到 ${T()}`:`多了 ${a+b-T()}`}`);setTimeout(()=>{if(G&&!G.over&&G.sel)tfMsg(`再找一顆跟 ${a} 湊 ${T()} 的`)},2200)}}
+    if(adjacent&&G.diff){noteWrong(a,b);G.selWrong=(G.selWrong||0)+1;const hi=Math.max(a,b),lo=Math.min(a,b);++frameTok;frameMinus(hi,lo,hi);
+      setTimeout(()=>{if(G&&!G.over&&G.sel){const sv=G.board[G.sel[0]][G.sel[1]];frameSet(sv,0,sv,sv)}},1800);
+      if(G.selWrong<2)tfMsg('數數看，拿走後剩幾個？');else{tfMsg(`${hi} − ${lo} = ${hi-lo}，不是 ${G.diff}`);setTimeout(()=>{if(G&&!G.over&&G.sel)tfMsg(`再找一顆和 ${G.board[G.sel[0]][G.sel[1]]} 差 ${G.diff} 的`)},2200)}}
+    else if(adjacent){noteWrong(a,b);G.selWrong=(G.selWrong||0)+1;frameSet(a,b,a,b);setTimeout(()=>{if(G&&!G.over&&G.sel)frameSet(a,0,a,a)},1800);if(G.selWrong<2)tfMsg(`看看圓點，有沒有剛好到 ${T()}？`);else{tfMsg(`${a} + ${b} = ${a+b}，${a+b<T()?`還差 ${T()-(a+b)} 才到 ${T()}`:`多了 ${a+b-T()}`}`);setTimeout(()=>{if(G&&!G.over&&G.sel)tfMsg(`再找一顆跟 ${a} 湊 ${T()} 的`)},2200)}}
     else tfMsg('要選旁邊的寶石喔');
     G.wrong++;
   }
@@ -935,7 +970,7 @@ function eliminate(r1,c1,r2,c2){
   G.busy=true;const now=Date.now();
   G.combo=(now-G.lastClear<5000)?G.combo+1:1;G.lastClear=now;
   const t1=tileAt(r1,c1),t2=tileAt(r2,c2);t1.classList.add('pop');t2.classList.add('pop');GL.pop(r1,c1);GL.pop(r2,c2);
-  fx(t1,T()+'!');shatter(t1);shatter(t2);sfx.shatter();if(calm()){const va=G.board[r1][c1],vb=G.board[r2][c2];frameSet(0,0,va,vb);showFrame(va,vb);if(G.mode==='practice'&&G.cleared%3===0)angel('eq',va,vb)}vib(G.combo>=2?[40,30,40,30,60]:40);shake(G.combo>=2);
+  fx(t1,(G.diff?'差'+G.diff:T())+'!');shatter(t1);shatter(t2);sfx.shatter();if(calm()){const va=G.board[r1][c1],vb=G.board[r2][c2];frameSet(0,0,va,vb);if(G.diff)showMinus(Math.max(va,vb),Math.min(va,vb));else showFrame(va,vb);if((G.mode==='practice'||G.diff)&&G.cleared%3===0)angel('eq',va,vb)}vib(G.combo>=2?[40,30,40,30,60]:40);shake(G.combo>=2);
   if(G.combo>=2){sfx.combo();$('hud-combo').textContent=`🔥 連擊 x${G.combo}`;}else{sfx.ok();$('hud-combo').textContent=''}
   G.cleared++;$('hud-cleared').textContent=G.cleared;addPts(10+(G.combo>=2?5*Math.min(G.combo,10):0));
   const push=G.combo>=2?3:2;if(!calm())moveMonster(-push,'hit');
@@ -946,6 +981,7 @@ function eliminate(r1,c1,r2,c2){
     if(calm()){refillPair([r1,c1],[r2,c2]);drawBoard();GL.rebuildSoon()}else gravity();
     G.busy=false;
     if(G.cleared>=G.lv.target){win();return}
+    if(G.lv.mix&&G.cleared%3===0)switchDiff();
     if(countMoves()===0)shuffle();
   },350);
 }
@@ -1036,7 +1072,7 @@ function angel(kind,va,vb){
     txt=(kind==='danger'?'別急！':'慢慢來，')+`找 ${G.board[r1][c1]} 和 ${G.board[r2][c2]}！`;
     [tileAt(r1,c1),tileAt(r2,c2)].forEach(t=>{t.classList.add('hint');setTimeout(()=>t.classList.remove('hint'),2500)});}
   if(kind==='combo'){txt='太棒了！繼續！';hearts()}
-  if(kind==='eq'){txt=`對！${va} 加 ${vb} 是 ${T()}！`;hearts()}
+  if(kind==='eq'){txt=G.diff?`對！${Math.max(va,vb)} 減 ${Math.min(va,vb)} 是 ${G.diff}！`:`對！${va} 加 ${vb} 是 ${T()}！`;hearts()}
   $('angel-text').textContent=txt;$('angel').classList.add('on');sfx.angel();
   clearTimeout(angel._t);angel._t=setTimeout(()=>$('angel').classList.remove('on'),2200);
 }
@@ -1049,16 +1085,16 @@ function win(){
   const secs=Math.round((Date.now()-G.start)/1000),bonus=Math.max(0,180-secs)*2+stars*50+(G.lv.boss?200:0);addPts(bonus);
   G.recorded=true;const rank=addScore({player:curPlayer(),name:playerName(curPlayer()),level:n,score:G.score,stars,date:stamp(),result:'win',mode:G.mode});
   progress.stars[n]=Math.max(progress.stars[n]||0,stars);
-  if(n>=progress.unlocked&&n<LEVELS.length)progress.unlocked=n+1;saveProgress();store.set(lastKey(),Math.min(n,LEVELS.length-1));
+  const L=LVS(G.mode);if(n>=progress.unlocked&&n<L.length)progress.unlocked=n+1;saveProgress();store.set(lastKey(),Math.min(n,L.length-1));
   $('ov-stars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);
-  $('ov-title').textContent=G.mode==='practice'?'全部湊好了！':G.lv.boss?'打敗爸爸大魔王！':'公主逃進城堡了！';
+  $('ov-title').textContent=G.diff?'全部減好了！':G.mode==='practice'?'全部湊好了！':G.lv.boss?'打敗爸爸大魔王！':'公主逃進城堡了！';
   const wp=Object.entries(G.wrongPairs||{}).sort((x,y)=>y[1]-x[1]).slice(0,3);
   const wpTxt=wp.length?`<br><small>今天比較卡的：${wp.map(([k,n])=>`${k}（${n} 次）`).join('、')}</small>`:'<br><small>今天全對，完全沒卡！</small>';
-  if(G.mode==='practice')$('ov-text').innerHTML=`消了 ${G.cleared} 對 🎆<br><b style="color:var(--gold)">${G.score} 分</b>`+wpTxt;
+  if(calm())$('ov-text').innerHTML=`消了 ${G.cleared} 對 🎆<br><b style="color:var(--gold)">${G.score} 分</b>`+wpTxt;
   else $('ov-text').innerHTML=(G.lv.boss?'全家一起放煙火 🎆🎆🎆':`消了 ${G.cleared} 對，暴龍摔倒了 🤕`)+`<br><b style="color:var(--gold)">${G.score} 分</b>（時間加成 +${bonus}）· 排行榜第 ${rank} 名`;
   $('ov-family').innerHTML=G.lv.boss?ROLES.map(r=>`<div class="face">${faceHTML(r.id)}</div>`).join(''):`<div class="face">${faceHTML('princess')}</div><div class="face">${faceHTML('angel')}</div>`;
   const b=$('ov-btn');
-  if(n<LEVELS.length){b.textContent='下一關 ▶';b.onclick=()=>startLevel(n)}else{b.textContent='再玩一次';b.onclick=()=>startLevel(G.i)}
+  if(n<L.length){b.textContent='下一關 ▶';b.onclick=()=>startLevel(n)}else{b.textContent='再玩一次';b.onclick=()=>startLevel(G.i)}
   $('overlay').classList.add('on');
 }
 function recordRun(result){if(!G||G.recorded||G.cleared===0)return;G.recorded=true;
@@ -1129,7 +1165,7 @@ $('opt-speed').onchange=e=>store.set('speed',e.target.value);
 $('opt-diag').onchange=e=>{store.set('diag',e.target.value);if(G&&!G.over&&countMoves()===0)shuffle()};
 function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1600)}
 function resetProgress(){const b=$('btn-reset');if(!b.dataset.arm){b.dataset.arm='1';b.textContent='再按一次確定';setTimeout(()=>{delete b.dataset.arm;b.textContent='重置'},3000);return}
-  delete b.dataset.arm;b.textContent='重置';progress.unlocked=1;progress.stars={};saveProgress();store.del(lastKey());renderLevels();toast('已重置 '+playerName(curPlayer())+' 的進度')}
+  delete b.dataset.arm;b.textContent='重置';progress.unlocked=1;progress.stars={};saveProgress();store.del(lastKey());renderLevels();toast('已重置 '+playerName(curPlayer())+(curMode()==='minus'?' 的減法進度':' 的進度'))}
 function previewSfx(){sfx.shatter();vib(40)}
 
 
