@@ -231,9 +231,10 @@ h1.h2{font-size:26px;margin:10px 0;text-shadow:0 3px 0 #a86f00}
 <div class="screen on" id="s-title">
   <h1>&lt;&lt; 隕石大作戰 &gt;&gt;</h1>
   <div class="sub">按對數字，打掉隕石！</div>
-  <button class="picker" id="picker" type="button" onclick="togglePicker()"></button>
-  <div class="drawer" id="drawer"><div class="inner">
-    <div class="sub" style="margin:2px 0 6px;white-space:normal">誰在玩？</div>
+  <!-- 誰在玩：Yuna / Yoyo 直接並排顯示，不用點開（膠囊鈕藏起來，抽屜固定打開） -->
+  <button class="picker" id="picker" type="button" onclick="togglePicker()" style="display:none"></button>
+  <div class="drawer open" id="drawer"><div class="inner">
+    <div class="sub" style="display:none;margin:2px 0 6px;white-space:normal">誰在玩？</div>
     <div class="players" id="players"></div>
     <div id="rename" class="rename" hidden><input id="rename-in" maxlength="8" placeholder="輸入名字" autocomplete="off"><button id="rename-ok" class="btn sm" type="button">好</button></div>
   </div></div>
@@ -298,7 +299,7 @@ h1.h2{font-size:26px;margin:10px 0;text-shadow:0 3px 0 #a86f00}
 <div class="ver" id="ver"></div>
 
 <script>
-const VERSION='v1.4';
+const VERSION='v1.5';
 const $=id=>document.getElementById(id);
 const DEV=/(^|[?#&])dev(\b|$)/.test(location.search+location.hash);
 /* ====== 儲存（沿用前作，localStorage 失敗時退回記憶體） ====== */
