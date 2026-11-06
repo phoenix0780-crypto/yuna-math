@@ -196,7 +196,7 @@ body.webgl .tile.sel{box-shadow:none}
 .drawer > .inner{overflow:hidden;min-height:0}
 .drawer.open{grid-template-rows:1fr;margin-bottom:16px}
 .drawer.open > .inner{padding:8px}
-.players{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 8px;justify-items:center;margin:4px 0 6px;width:100%;max-width:400px}
+.players{display:grid;grid-template-columns:repeat(2,minmax(0,96px));justify-content:center;gap:10px 24px;justify-items:center;margin:4px 0 6px;width:100%;max-width:400px}
 .pl{display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;color:var(--cream);font-size:14px;font-weight:700;opacity:.5;padding:4px;max-width:76px}
 .pl small{font-size:10px}
 .pl .face{width:56px;height:56px;font-size:30px}
@@ -359,7 +359,7 @@ body.webgl .tile .dots i{background:rgba(0,0,0,.35)}
 </div>
 
 <script>
-const VERSION='v4.2';
+const VERSION='v4.3';
 const DEV=/(^|[?#&])dev(\b|$)/.test(location.search+location.hash);
 function T(){return (G&&G.sum)||10}
 function half(){if(G&&G.diff)return 0;const t=T();return t%2===0?t/2:0}
@@ -390,7 +390,7 @@ const ROLES=[
   {id:'boss',name:'爸爸大魔王',emoji:DINO_SVG.replace(/#3e9c5c/g,'#b8302c').replace(/#2a6e40/g,'#6b1512').replace(/#8f2d2d/g,'#4a0f0f').replace('#dff5e1','#ffe1dc'),hint:'最終關'},
   {id:'angel',name:'媽媽天使',emoji:'👩',hint:'鼓勵'},
   {id:'guest',name:'其他人',emoji:SMILEY_SVG,hint:'自訂'},
-  {id:'turtle',name:'李宥穎',emoji:TURTLE_SVG,hint:'海龜'},
+  {id:'turtle',name:'Yoyo',emoji:TURTLE_SVG,hint:'海龜'},
   {id:'princess2',name:'李亞恩',emoji:PRINCESS2_SVG,hint:'公主'},
   {id:'robot',name:'蕭阿伯',emoji:ROBOT_SVG,hint:'機器人'}
 ];
@@ -398,9 +398,10 @@ function faceHTML(id){return ROLES.find(x=>x.id===id).emoji}
 function renderFace(el,id){el.innerHTML=faceHTML(id)}
 
 /* ====== 玩家與排行榜 ====== */
-const PLAYERS=[{id:'princess',name:'Yuna'},{id:'monster',name:'Bryson'},{id:'angel',name:'媽媽'},{id:'boss',name:'爸爸'},{id:'turtle',name:'李宥穎'},{id:'princess2',name:'李亞恩'},{id:'robot',name:'蕭阿伯'},{id:'guest',name:'其他人'}];
+/* 誰在玩只留 Yuna 和 Yoyo（Yoyo = 李宥穎，沿用 turtle 的進度與海龜頭像）；其他人的舊紀錄留在排行榜 */
+const PLAYERS=[{id:'princess',name:'Yuna'},{id:'turtle',name:'Yoyo'}];
 function playerName(id){return id==='guest'?(store.get('guestName')||'其他人'):(PLAYERS.find(p=>p.id===id)||PLAYERS[0]).name}
-function curPlayer(){return store.get('player')||'princess'}
+function curPlayer(){const p=store.get('player');return PLAYERS.some(x=>x.id===p)?p:'princess'}
 function togglePicker(){const p=$('picker'),d=$('drawer');const on=!d.classList.contains('open');d.classList.toggle('open',on);p.classList.toggle('open',on);p.classList.remove('hint');store.set('pickedOnce','1');
   if(on)setTimeout(()=>{try{d.scrollIntoView({behavior:'smooth',block:'nearest'})}catch(e){}},320)}
 function renderPicker(){const p=$('picker');
@@ -422,8 +423,8 @@ function showBoard(){const sel=$('lb-level');if(sel.options.length===1){LEVELS.f
 function renderBoard(){const f=$('lb-level').value,box=$('lb');let b=getBoard();if(f!=='all')b=b.filter(e=>f[0]==='m'?(e.mode==='minus'&&'m'+e.level===f):(e.mode!=='minus'&&e.level==f));b=b.slice(0,10);
   box.innerHTML='<div class="row head"><span>#</span><span></span><span>玩家 / 關卡 / 時間</span><span>結果</span><span class="sc">分數</span></div>';
   if(!b.length){box.innerHTML+='<div class="emp">還沒有紀錄，去打敗暴龍吧！</div>';return}
-  b.forEach((e,i)=>{const p=PLAYERS.find(x=>x.id===e.player)||PLAYERS[0];const me=e.player===curPlayer();const nm=e.player==='guest'?(e.name||playerName('guest')):p.name;
-    box.innerHTML+=`<div class="row${me?' me':''}"><span class="rk">${i+1}</span><div class="face">${faceHTML(p.id)}</div><span>${nm}<br><small style="opacity:.7">${((e.mode==='minus'?MLEVELS:LEVELS)[e.level-1]||{name:'?'}).name} · ${({practice:'數感',duo:'親子',minus:'減法'})[e.mode]||'冒險'} · ${e.date}</small></span><span style="color:#ffd166;font-size:13px">${e.result==='win'||!e.result?('★'.repeat(e.stars)||'過關'):(e.result==='lose'?'😱 被抓':'🚪 中離')}</span><span class="sc">${e.score}</span></div>`})}
+  b.forEach((e,i)=>{const p=PLAYERS.find(x=>x.id===e.player);const me=e.player===curPlayer();const nm=p?p.name:(e.name||'?');
+    box.innerHTML+=`<div class="row${me?' me':''}"><span class="rk">${i+1}</span><div class="face">${faceHTML(ROLES.some(r=>r.id===e.player)?e.player:'guest')}</div><span>${nm}<br><small style="opacity:.7">${((e.mode==='minus'?MLEVELS:LEVELS)[e.level-1]||{name:'?'}).name} · ${({practice:'數感',duo:'親子',minus:'減法'})[e.mode]||'冒險'} · ${e.date}</small></span><span style="color:#ffd166;font-size:13px">${e.result==='win'||!e.result?('★'.repeat(e.stars)||'過關'):(e.result==='lose'?'😱 被抓':'🚪 中離')}</span><span class="sc">${e.score}</span></div>`})}
 function clearBoard(){if(!confirm('確定清除所有排行榜紀錄？'))return;store.del('board');renderBoard();toast('已清除')}
 /* ====== 遊戲模式 ====== */
 const MODES=[{id:'practice',name:'🌱 數感',hint:'建議國小一年級以上適合｜想想還差幾才到目標數？先湊 10，後面湊 11～15'},{id:'minus',name:'➖ 減法',hint:'建議國小一年級（第 8 單元 10 以內的減法）｜圓點會拿走小的數，看剩幾個'},{id:'adventure',name:'🦖 冒險',hint:'建議國小三年級以上適合｜暴龍會追公主，消得越快牠退越遠'}];
